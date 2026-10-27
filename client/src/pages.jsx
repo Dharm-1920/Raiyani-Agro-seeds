@@ -347,7 +347,7 @@ function AuthForm({
       {tr(register && inp('name', 'Full name'))}{tr(inp('email', 'Email', 'email'))}{tr(inp('password', 'Password', 'password'))}
       {tr(register && <>{tr(inp('phone', 'Phone', 'tel', false))}{tr(inp('address', 'Delivery address (optional)', 'text', false))}<p className="muted">{tr("You can add your address later or at checkout.")}</p></>)}
       {tr(err && <p className="err">{tr(err)}</p>)}<button>{tr(register ? 'Sign up' : 'Login')}</button>
-      <p>{tr(register ? <>{tr("Have an account? ")}<Link to="/login">{tr("Login")}</Link></> : <>{tr("New here? ")}<Link to="/register">{tr("Create account")}</Link></>)}</p><Link className="text-link" to="/admin/login">{tr("Administrator sign in \u2192")}</Link></form>;
+      <p>{tr(register ? <>{tr("Have an account? ")}<Link to="/login">{tr("Login")}</Link></> : <>{tr("New here? ")}<Link to="/register">{tr("Create account")}</Link></>)}</p></form>;
 }
 export const Login = () => <AuthForm />;
 export const Register = () => <AuthForm register />;
