@@ -2,6 +2,14 @@
 
 Chosen setup: one **Render Free web service** serves the React frontend and Express API together. **MongoDB Atlas Free** stores accounts, orders, products, notifications and uploaded product images. The resulting public address will end in `.onrender.com`, subject to name availability.
 
+## Deployment completed — 27 October 2026
+
+Public shop: [raiyani-agro-seeds.onrender.com](https://raiyani-agro-seeds.onrender.com/). Render service: `srv-dbgbv8ks728c73dv73pg`. Production admin sign-in, products, three migrated images, route refreshes, guest access restrictions, notifications, saved-cart reads and a Gujarati invoice passed live checks. The local backend suite has 57 passing tests.
+
+Cash on Delivery is enabled. The development UPI value was a placeholder and was deliberately omitted from the public service; add the owner's verified receiving UPI ID to Render's environment before accepting QR payments.
+
+The production owner password is the `PRODUCTION_ADMIN_PASSWORD` value in the ignored local `server/.env.production.local` file. It is different from the development example password and is never stored in this repository. Manage future products and orders through the live website; the local database is a separate development copy after migration.
+
 No Vercel upgrade, paid disk, paid database, or paid Render service is required for this configuration. Keep all billing upgrades and paid add-ons disabled.
 
 ## Accounts and source
