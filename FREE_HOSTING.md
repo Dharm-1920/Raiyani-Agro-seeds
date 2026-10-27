@@ -33,7 +33,7 @@ Use the checked-in `render.yaml` blueprint or configure the service manually:
 - Runtime: Node; Node version: 22.
 - Plan/instance: **Free**. No persistent disk.
 - Root directory: repository root (leave blank).
-- Build: `npm --prefix client ci && npm --prefix client run build && npm --prefix server ci`.
+- Build: `npm --prefix client ci --include=dev && npm --prefix client run build && npm --prefix server ci --omit=dev`.
 - Start: `npm --prefix server start`.
 - Health check: `/api/health`.
 - Environment: `NODE_ENV=production`, `SERVE_CLIENT=true`, `UPLOAD_STORAGE=mongodb`.
