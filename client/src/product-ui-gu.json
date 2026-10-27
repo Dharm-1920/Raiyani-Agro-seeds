@@ -1,0 +1,12 @@
+{
+  "Gujarati product details": "ઉત્પાદનની ગુજરાતી વિગતો",
+  "Gujarati text is generated when you save. You can review or enter it here.": "સાચવતી વખતે ગુજરાતી અનુવાદ આપમેળે તૈયાર થાય છે. અહીં તમે તેને જોઈ કે બદલી શકો છો.",
+  "Gujarati product name": "ઉત્પાદનનું ગુજરાતી નામ",
+  "Gujarati category": "ગુજરાતીમાં શ્રેણી",
+  "Gujarati unit / pack size": "ગુજરાતીમાં એકમ / પેકનું કદ",
+  "Gujarati description": "ગુજરાતીમાં વર્ણન",
+  "Generate Gujarati": "ગુજરાતી અનુવાદ બનાવો",
+  "Gujarati translations are ready. Review them before saving.": "ગુજરાતી અનુવાદ તૈયાર છે. સાચવતાં પહેલાં તપાસો.",
+  "Gujarati translation could not be generated. Enter the Gujarati fields manually or try again.": "ગુજરાતી અનુવાદ તૈયાર થઈ શક્યો નથી. ગુજરાતી વિગતો જાતે ભરો અથવા ફરી પ્રયાસ કરો.",
+  "Product text must be a string of at most 16000 characters.": "ઉત્પાદનની દરેક વિગત વધુમાં વધુ ૧૬૦૦૦ અક્ષરની હોવી જોઈએ."
+}

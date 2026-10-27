@@ -1,0 +1,26 @@
+# Entire shop on Render Free. Images and shop data persist in MongoDB Atlas.
+services:
+  - type: web
+    name: raiyani-agro-seeds
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix client ci && npm --prefix client run build && npm --prefix server ci
+    startCommand: npm --prefix server start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: UPLOAD_STORAGE
+        value: mongodb
+      - key: SERVE_CLIENT
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: SHOP_UPI_ID
+        sync: false
+      - key: SHOP_UPI_NAME
+        value: Raiyani Agro Seeds
