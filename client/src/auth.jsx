@@ -34,13 +34,13 @@ const oauthErrors = {
 export function CustomerAuth({ register = false }) {
   const { login, register: createAccount } = useAuth();
   const navigate = useNavigate(), location = useLocation(), firstField = useRef(null);
-  const [method, setMethod] = useState('email'), [options, setOptions] = useState(null), [optionsError, setOptionsError] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
+  const [options, setOptions] = useState(null), [optionsError, setOptionsError] = useState(false);
+  const [form, setForm] = useState({ name: '', identifier: '', email: '', phone: '', password: '', confirm: '' });
   const [busy, setBusy] = useState(false), [error, setError] = useState(oauthErrors[new URLSearchParams(location.search).get('authError')] || '');
   const loadOptions = () => { setOptionsError(false); api.get('/auth/options').then(({ data }) => setOptions(data)).catch(() => setOptionsError(true)); };
   useEffect(loadOptions, []);
-  useEffect(() => { firstField.current?.focus(); }, [method]);
-  useEffect(() => { setMethod('email'); setError(oauthErrors[new URLSearchParams(location.search).get('authError')] || ''); setForm({ name: '', email: '', phone: '', password: '', confirm: '' }); }, [register, location.search]);
+  useEffect(() => { firstField.current?.focus(); }, [register]);
+  useEffect(() => { setError(oauthErrors[new URLSearchParams(location.search).get('authError')] || ''); setForm({ name: '', identifier: '', email: '', phone: '', password: '', confirm: '' }); }, [register, location.search]);
   const change = key => event => setForm({ ...form, [key]: event.target.value });
   const submit = async event => {
     event.preventDefault(); setError('');
@@ -49,19 +49,22 @@ export function CustomerAuth({ register = false }) {
     setBusy(true);
     try {
       if (register) await createAccount({ name: form.name, email: form.email, phone: form.phone, password: form.password });
-      else await login({ method, email: form.email, phone: form.phone, password: form.password });
+      else {
+        const identifier = form.identifier.trim();
+        await login(identifier.includes('@')
+          ? { method: 'email', email: identifier, password: form.password }
+          : { method: 'phone', phone: identifier, password: form.password });
+      }
       const from = location.state?.from;
       navigate(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/home', { replace: true });
     } catch (err) { setError(errMsg(err)); }
     finally { setBusy(false); }
   };
-  const choose = value => { setError(''); setMethod(value); };
   return <AuthShell><span className="auth-kicker">{tr('YOUR FARMING ACCOUNT')}</span><h1>{tr(register ? 'A fresh start.' : 'Welcome back.')}</h1><p className="auth-intro">{tr(register ? 'Create your account. Grow with us.' : 'Your farm essentials, one sign-in away.')}</p>
       <form onSubmit={submit} className="auth-form"><fieldset disabled={busy}>
         {register && <label>{tr('Full name')}<input ref={firstField} required autoComplete="name" maxLength={120} value={form.name} onChange={change('name')} /></label>}
-        {method === 'phone' && <label>{tr('Phone number')}<input ref={!register ? firstField : undefined} type="tel" inputMode="tel" autoComplete="tel" required maxLength={30} placeholder="+91 98765 43210" value={form.phone} onChange={change('phone')} /><small>{tr('Use your saved phone number and password.')}</small></label>}
-        {(method === 'email' || register) && <label>{tr(register ? 'Email for invoices & recovery' : 'Email address')}<input ref={!register && method === 'email' ? firstField : undefined} required type="email" autoComplete="email" maxLength={254} value={form.email} onChange={change('email')} /></label>}
-        {register && method === 'email' && <label>{tr('Phone number (optional)')}<input type="tel" autoComplete="tel" maxLength={30} placeholder="+91 98765 43210" value={form.phone} onChange={change('phone')} /></label>}
+        {!register && <label>{tr('Email or phone number')}<input ref={firstField} required type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={254} value={form.identifier} onChange={change('identifier')} /></label>}
+        {register && <><label>{tr('Email for invoices & recovery')}<input required type="email" autoComplete="email" maxLength={254} value={form.email} onChange={change('email')} /></label><label>{tr('Phone number (optional)')}<input type="tel" autoComplete="tel" maxLength={30} placeholder="+91 98765 43210" value={form.phone} onChange={change('phone')} /></label></>}
         <PasswordField value={form.password} newPassword={register} recovery={!register} onChange={change('password')} />
         {register && <><small className="auth-password-hint">{tr('Use at least 8 characters.')}</small><PasswordField label="Confirm password" newPassword value={form.confirm} onChange={change('confirm')} /></>}
         {error && <p className="auth-error" role="alert">{tr(error)}</p>}
@@ -72,7 +75,6 @@ export function CustomerAuth({ register = false }) {
       <a className={'auth-method auth-google' + (!options?.google ? ' unavailable' : '')} href={options?.google ? `/api/auth/google/start?next=${encodeURIComponent(location.state?.from || '/home')}` : undefined} aria-disabled={!options?.google} onClick={!options?.google ? event => event.preventDefault() : undefined}><GoogleMark /><span>{tr('Continue with Google')}</span></a>
       {options && !options.google && <p className="auth-provider-note">{tr('Google sign-in is currently unavailable. Continue with email or phone.')}</p>}
       {optionsError && <p className="auth-provider-note" role="status">{tr('Sign-in options could not be checked.')} <button className="auth-text-button" type="button" onClick={loadOptions}>{tr('Retry')}</button></p>}
-      <button type="button" className="auth-phone-switch" disabled={busy} onClick={() => choose(method === 'phone' ? 'email' : 'phone')}><Icon name={method === 'phone' ? 'mail' : 'phone'} size={17} />{tr(method === 'phone' ? 'Use email instead' : 'Use phone number instead')}</button>
     </div>
     <p className="auth-switch">{tr(register ? 'Already have an account?' : 'New to Raiyani Agro Seeds?')} <Link state={location.state} to={register ? '/login' : '/register'}>{tr(register ? 'Sign in' : 'Create account')}</Link></p>
     {register && <p className="auth-privacy">{tr('We use your email for account recovery and purchase invoices.')}</p>}

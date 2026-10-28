@@ -3,14 +3,14 @@
 @media(prefers-reduced-motion:reduce){.auth-method{transition:none}}
 main.auth-main{display:block;width:100%;max-width:none;padding:0;margin:0;min-width:0;background:#edf0e8}.auth-scene{width:100%;min-width:0}.auth-card .ras-brand,.auth-card .ras-wordmark>strong,.auth-card .ras-wordmark>span{color:#f1efdc}.auth-card .ras-wordmark>small{color:#becba8}.auth-card .language-selector{width:auto;flex:none}.auth-method{font-family:inherit;font-size:13px;font-weight:600}
 
-/* Direct email sign-in with the dark layout requested by the shop owner. */
+/* Direct email or phone sign-in, matching the owner's dark reference. */
 html:has(main.auth-main),
 body:has(main.auth-main) { background: #0d1117; color-scheme: dark; }
 main.auth-main,
 .auth-scene { background: #0d1117; }
 .auth-scene { padding: 40px 20px 24px; }
 .auth-card {
-  max-width: 500px;
+  max-width: 608px;
   padding: 30px;
   background: #0d1117;
   border: 0;
@@ -28,13 +28,13 @@ main.auth-main,
 }
 .auth-kicker { color: #8b949e; }
 .auth-intro { color: #919aa5; line-height: 1.6; margin-bottom: 28px; }
-.auth-form label { font-size: 14px; color: #f0f6fc; font-weight: 500; }
+.auth-form label { font-size: 16px; color: #f0f6fc; font-weight: 500; }
 .auth-form input {
   background: #0d1117;
   color: #f0f6fc;
   border: 1px solid #3d444d;
   border-radius: 7px;
-  min-height: 50px;
+  min-height: 62px;
 }
 .auth-form input:focus { outline-color: #2f81f7; }
 .auth-form input::placeholder { color: #848d97; }
@@ -43,7 +43,7 @@ main.auth-main,
 .auth-field-heading label { margin: 0; }
 .auth-field-heading .auth-forgot { margin: 0; font-size: 14px; font-weight: 400; text-decoration: none; }
 .auth-password-field input { margin-top: 8px; }
-.auth-password-field > button { top: 5px; color: #919aa5; }
+.auth-password-field > button { top: 11px; color: #919aa5; }
 .auth-password-field > button:hover { background: #212830; }
 .auth-form small { color: #919aa5; }
 .auth-card .auth-submit {
