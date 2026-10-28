@@ -18,7 +18,9 @@ function animateCartAdd(button, quantity) {
   if (!button?.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   button.getAnimations().forEach(animation => animation.cancel());
   button.animate([{ transform: 'scale(1)' }, { transform: 'scale(.97)', offset: .3 }, { transform: 'scale(1)' }], { duration: 520, easing: 'cubic-bezier(.22,.61,.36,1)' });
-  const target = [document.querySelector('.cart-link'), document.querySelector('.menu-button')].find(element => {
+  requestAnimationFrame(() => {
+  if (!button.isConnected) return;
+  const target = [document.querySelector('.floating-cart'), document.querySelector('.cart-link'), document.querySelector('.menu-button')].find(element => {
     const rect = element?.getBoundingClientRect();
     return rect?.width > 0 && rect?.height > 0;
   });
@@ -49,6 +51,7 @@ function animateCartAdd(button, quantity) {
     dot.remove();
     target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'ease-in-out' });
   }, () => dot.remove());
+  });
 }
 
 export function ProductPurchase({ product, compact = false }) {

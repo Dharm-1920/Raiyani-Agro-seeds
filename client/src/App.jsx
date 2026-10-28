@@ -48,6 +48,17 @@ export default function App() {
     if (!loc.hash) window.scrollTo(0, 0);
   }, [loc.pathname, loc.search, loc.hash]);
   useEffect(() => {
+    if (!menu) return;
+    const close = event => {
+      if (event.key === 'Escape') {
+        setMenu(false);
+        document.querySelector('.menu-button')?.focus();
+      }
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [menu]);
+  useEffect(() => {
     if (!ready) return;
     const animation = animatePage();
     return () => animation?.cancel();
@@ -67,7 +78,7 @@ export default function App() {
           e.preventDefault();
           navigate('/shop?search=' + encodeURIComponent(search.trim()));
         }}><Icon name="search" size={17} /><input aria-label={tr("Search the shop")} placeholder={tr("What does your farm need?")} value={search} onChange={e => setSearch(e.target.value)} /><button aria-label={tr("Submit search")}><Icon name="arrow" size={17} /></button></form>
-        <NotificationBell /><ProfileMenu /><button className="menu-button" aria-label={tr("Toggle navigation")} aria-controls="store-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name="menu" /></button></div>
+        <NotificationBell /><ProfileMenu /><button className="menu-button" aria-label={tr("Toggle navigation")} aria-controls="store-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><span className="menu-lines" aria-hidden="true"><i /><i /><i /></span></button></div>
         <nav id="store-navigation" className={menu ? "open" : ""}>
           <LanguageSelector /><NavLink to="/home" end>{tr("Home")}</NavLink>
           <NavLink to="/shop">{tr("Shop")}</NavLink>
@@ -111,6 +122,9 @@ export default function App() {
           <Route path="*" element={<p className="center">{tr("Page not found. ")}<Link to="/">{tr("Go home")}</Link></p>} />
         </Routes>
       </main>
+      {showStore && count > 0 && !['/cart', '/checkout'].includes(loc.pathname) && <Link to="/cart" className="floating-cart" aria-label={`${tr('Your cart')} (${count})`}>
+        <Icon name="bag" size={26} /><span className="floating-cart-count" key={count} aria-hidden="true">{count > 99 ? '99+' : tr(count)}</span>
+      </Link>}
       {tr(showStore && <footer className="foot"><div className="footer-inner"><div><Link to="/" className="footer-brand"><Brand /></Link><p>{tr("Quality seeds and farm essentials.")}<br />{tr("For every season. For every farmer.")}</p></div><div><h4>{tr("Explore")}</h4><Link to="/about">{tr("About us")}</Link><Link to="/our-story">{tr("Our story")}</Link><Link to="/our-team">{tr("Our team")}</Link><Link to="/blog">{tr("Blog")}</Link><Link to="/welcome">{tr("Welcome to RAS")}</Link><Link to="/shop">{tr("All products")}</Link><Link to="/shop?category=Seeds">{tr("Seeds")}</Link><Link to="/shop?category=Fertilizers">{tr("Fertilizers")}</Link></div><div><h4>{tr("Here to help")}</h4><Link to="/contact">{tr("Contact us")}</Link><Link to="/orders">{tr("Your orders")}</Link><a href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr("Visit our shop \u2197")}</a></div><div><h4>{tr("Find us")}</h4><ShopDetails /><span className="footer-note">{tr("A little care. A better harvest.")}</span></div></div><div className="footer-bottom">© {tr(new Date().getFullYear())} {tr(SHOP.name)}<span>{tr("Made for the people who grow.")}</span></div></footer>)}
     </>;
 }
