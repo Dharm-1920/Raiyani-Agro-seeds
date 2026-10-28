@@ -12,6 +12,7 @@ import { NotifyButton } from './notifications.jsx';
 
 import InvoiceButton, { InvoicePreferences } from './invoice.jsx';
 import { PaymentQR, paymentError, refundText } from './payment.jsx';
+import { ProductPurchase, QuantityControl } from './purchase.jsx';
 export const rs = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 export function Img({
   p
@@ -23,25 +24,11 @@ export function Img({
 function Card({
   p
 }) {
-  const {
-    add,
-    ready: cartReady
-  } = useCart();
-  const [added, setAdded] = useState(false);
-  useEffect(() => {
-    if (added) {
-      const t = setTimeout(() => setAdded(false), 1800);
-      return () => clearTimeout(t);
-    }
-  }, [added]);
   return <div className="card">
       <Link to={`/product/${p._id}`}><div className="product-image"><Img p={p} />{tr(p.mrp > p.price && <span className="discount">{tr(Math.round((1 - p.price / p.mrp) * 100))}{tr("% off")}</span>)}</div><h3>{productText(p)}</h3></Link>
       <p className="muted"><span className="category-label">{productText(p, "category")}</span> · {productText(p, "unit")}</p>
       <p><b>{tr(rs(p.price))}</b> {tr(p.mrp > p.price && <s className="muted">{tr(rs(p.mrp))}</s>)}</p>
-      {tr(p.stock > 0 ? <><button className="add-button" disabled={!cartReady} onClick={() => {
-        add(p);
-        setAdded(true);
-      }}><Icon name={added ? "check" : "bag"} size={17} />{tr(added ? "Added to cart" : "Add to cart")}</button><span className="sr-only" role="status">{tr(added ? `${productText(p)} added to cart` : "")}</span></> : <NotifyButton product={p} />)}
+      {p.stock > 0 ? <ProductPurchase key={p._id} product={p} compact /> : <NotifyButton product={p} />}
     </div>;
 }
 const categories = [['Seeds', 'leaf', 'Start with the right seed', '01'], ['Fertilizers', 'sun', 'Nourish every root', '02'], ['Pesticides', 'shield', 'Protect what you grow', '03'], ['Tools', 'tool', 'Make every day easier', '04']];
@@ -143,29 +130,20 @@ export function Product() {
   const {
       id
     } = useParams(),
-    {
-      add,
-      ready: cartReady
-    } = useCart(),
     [p, setP] = useState(null),
-    [qty, setQty] = useState(1),
     [msg, setMsg] = useState('');
   useEffect(() => {
-    api.get('/products/' + id).then(r => setP(r.data)).catch(() => setMsg('Product not found'));
+    let active = true;
+    setP(null); setMsg('');
+    api.get('/products/' + id).then(r => { if (active) setP(r.data); }).catch(() => { if (active) setMsg('Product not found'); });
+    return () => { active = false; };
   }, [id]);
   if (msg) return <p className="center">{tr(msg)}</p>;
   if (!p) return <p className="center">{tr("Loading\u2026")}</p>;
   return <><div className="breadcrumbs"><Link to="/shop">{tr("Shop")}</Link><span>/</span><span>{productText(p, "category")}</span><span>/</span><span>{productText(p)}</span></div><div className="detail"><Img p={p} />
       <div><h1>{productText(p)}</h1><p className="muted">{productText(p, "category")} · {productText(p, "unit")}</p>
         <p className="big">{tr(rs(p.price))} {tr(p.mrp > p.price && <s className="muted">{tr(rs(p.mrp))}</s>)}</p><p>{productText(p, "description")}</p>
-        {tr(p.stock > 0 ? <><p className="muted">{tr(p.stock)}{tr(" in stock")}</p>
-          <input type="number" min="1" max={p.stock} value={qty} onChange={e => setQty(Math.max(1, Math.min(+e.target.value || 1, p.stock)))} style={{
-            width: 80
-          }} />{tr(' ')}
-          <button disabled={!cartReady} onClick={() => {
-            add(p, qty);
-            setMsg('');
-          }}>{tr("Add to cart")}</button></> : <NotifyButton product={p} />)}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div></div></div></>;
+        {p.stock > 0 ? <><p className="muted">{tr(p.stock)}{tr(" in stock")}</p><ProductPurchase key={p._id} product={p} /></> : <NotifyButton product={p} />}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div></div></div></>;
 }
 export function Cart() {
   const {
@@ -179,29 +157,33 @@ export function Cart() {
   if (!cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
   if (!items.length) return <p className="center">{tr("Your cart is empty. ")}<Link to="/shop">{tr("Browse products")}</Link></p>;
   return <div className="box"><h1>{tr("Your cart")}</h1><p className="muted" role="status">{tr(saving ? 'Saving your cart…' : 'Your cart is saved to your account.')}</p>
-      {tr(items.map(i => <div className="row" key={i.id}><span>{productText(i)}</span>
-          <input type="number" min="1" max={i.stock} value={i.qty} onChange={e => setQty(i.id, +e.target.value || 1)} style={{
-        width: 70
-      }} />
+      {tr(items.map(i => <div className="row" key={i.id}><span className="cart-item-name">{productText(i)}</span>
+          <QuantityControl value={i.qty} max={i.stock} disabled={!i.stock} onChange={qty => setQty(i.id, qty)} name={productText(i)} />
           <b>{tr(rs(i.price * i.qty))}</b><button className="link" onClick={() => remove(i.id)}>{tr("Remove")}</button></div>))}
       <p className="big">{tr("Subtotal: ")}{tr(rs(total))}</p><p className="muted">{tr("Shipping is calculated at checkout (free on orders \u20B9500 and above).")}</p>
       <Link className="btn" to="/checkout">{tr("Checkout")}</Link></div>;
 }
 export function Checkout() {
   const { language } = useLanguage();
+  const location = useLocation();
   const [invoiceWhatsApp, setInvoiceWhatsApp] = useState(false);
   const {
       user,
       updateProfile
     } = useAuth(),
     {
-      items,
-      total,
+      items: cartItems,
+      total: cartTotal,
       clear,
       ready: cartReady,
       flush
     } = useCart(),
     nav = useNavigate();
+  const purchase = location.state?.buyNow;
+  const invalidPurchase = Boolean(purchase && (purchase.accountId !== user.id || !purchase.item || typeof purchase.item.id !== 'string' || !Number.isInteger(purchase.item.qty) || purchase.item.qty < 1 || purchase.item.qty > 10000 || !Number.isFinite(purchase.item.price) || purchase.item.price < 0));
+  const directPurchase = purchase && !invalidPurchase ? purchase.item : null;
+  const items = directPurchase ? [directPurchase] : cartItems;
+  const total = directPurchase ? directPurchase.price * directPurchase.qty : cartTotal;
   const [saveAddress, setSaveAddress] = useState(true);
   const [shipping, setShipping] = useState({
     name: user.name,
@@ -225,7 +207,7 @@ export function Checkout() {
     setBusy(true);
     let created;
     try {
-      await flush();
+      if (!directPurchase) await flush();
       if (saveAddress) await updateProfile(shipping);
       const {
         data
@@ -241,7 +223,7 @@ export function Checkout() {
         invoiceLanguage: language
       });
       created = data.order;
-      clear();
+      if (!directPurchase) clear();
       nav('/orders', {
         state: {
           placed: created._id,
@@ -250,7 +232,7 @@ export function Checkout() {
       });
     } catch (e) {
       if (created) {
-        clear();
+        if (!directPurchase) clear();
         nav('/orders', {
           state: {
             paymentMessage: paymentError(e),
@@ -263,9 +245,10 @@ export function Checkout() {
       }
     }
   };
-  if (!cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
+  if (invalidPurchase) return <p className="center" role="alert">{tr('Choose this product again to continue with your current account.')} <Link to="/shop">{tr('Browse products')}</Link></p>;
+  if (!directPurchase && !cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
   if (!items.length) return <p className="center">{tr("Your cart is empty. ")}<Link to="/shop">{tr("Browse products")}</Link></p>;
-  return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><label>{tr("Name")}<input required autoComplete="name" value={shipping.name} onChange={e => setShipping({
+  return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><section className="checkout-items" aria-label={tr('Order summary')}>{items.map(item => <div className="checkout-item" key={item.id}><span>{productText(item)} × {tr(item.qty)}</span><b>{tr(rs(item.price * item.qty))}</b></div>)}{directPurchase && <p className="muted">{tr('Your saved cart stays unchanged.')}</p>}</section><label>{tr("Name")}<input required autoComplete="name" value={shipping.name} onChange={e => setShipping({
         ...shipping,
         name: e.target.value
       })} /></label><label>{tr("Phone")}<input required type="tel" autoComplete="tel" inputMode="tel" maxLength={30} pattern="[0-9+ ]{8,30}" value={shipping.phone} onChange={e => setShipping({

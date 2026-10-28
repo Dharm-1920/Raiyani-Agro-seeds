@@ -1,0 +1,32 @@
+.product-purchase{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:22px 0 0}
+.quantity-control{display:inline-flex;align-items:center;flex-shrink:0;background:#fff;border:1px solid #d3dccb;border-radius:12px;overflow:hidden;height:48px}
+.quantity-control button{display:grid;place-items:center;width:42px;min-height:46px;padding:0;border:0;border-radius:0;background:transparent;color:#244f3b;font-size:23px;font-weight:500;line-height:1}
+.quantity-control button:hover{background:#edf2e6;color:#244f3b}
+.quantity-control button:disabled{opacity:.35;cursor:not-allowed}
+.quantity-control input{width:48px;min-width:0;min-height:46px;padding:8px 2px;border:0;border-radius:0;text-align:center;background:transparent;font-size:16px;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
+.quantity-control input::-webkit-inner-spin-button,.quantity-control input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.quantity-control:focus-within{outline:2px solid #7f986b;outline-offset:3px}
+.quantity-control button:focus-visible{outline:2px solid #7f986b;outline-offset:-4px}
+.purchase-buttons{display:flex;flex-wrap:wrap;gap:10px;flex:1}
+.purchase-buttons button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 20px;font-size:13px;border:1px solid #244f3b;border-radius:30px;white-space:nowrap}
+.purchase-buttons .purchase-add{background:#244f3b;color:#fff}
+.purchase-buttons .purchase-add:hover{background:#173e2c}
+.purchase-buttons .purchase-add.is-added{background:#3c6845}
+.purchase-buttons .purchase-buy{background:#f4f0df;color:#244f3b;border-color:#b5c3a7}
+.purchase-buttons .purchase-buy:hover{background:#e7eddc;border-color:#244f3b}
+.purchase-feedback{flex-basis:100%;min-height:18px;font-size:12px;line-height:1.5;color:#476444}
+.cart-fly-dot{position:fixed;z-index:10000;pointer-events:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#d5e6b7;color:#234b36;border:1px solid #90ac74;box-shadow:0 5px 18px #173e2c26;font-size:12px;font-weight:700}
+.card .product-purchase.compact{gap:10px;margin-top:14px}
+.card .compact .quantity-control{height:42px}
+.card .compact .quantity-control button{width:36px;min-height:40px}
+.card .compact .quantity-control input{width:44px;min-height:40px}
+.card .compact .purchase-buttons{flex-basis:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.card .compact .purchase-buttons button{min-height:42px;padding:10px 8px;font-size:11px;white-space:normal;gap:5px;border-radius:8px}
+.card .compact .purchase-feedback{font-size:11px}
+.cart-item-name{flex:1;min-width:130px}
+.checkout-items{padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:24px}
+.checkout-item{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:8px 0;font-size:14px}
+.checkout-item span{overflow-wrap:anywhere}
+.checkout-item b{white-space:nowrap}
+@media(max-width:520px){.detail .product-purchase>.quantity-control{flex-shrink:0}.detail .purchase-buttons{flex-basis:100%;display:grid;grid-template-columns:1fr 1fr}.detail .purchase-buttons button{padding:12px 9px;white-space:normal}.row .quantity-control{max-width:100%}}
+@media(prefers-reduced-motion:reduce){.cart-fly-dot{display:none}.purchase-buttons button{transition:none}}
