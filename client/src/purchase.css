@@ -15,13 +15,18 @@
 .purchase-buttons .purchase-buy{background:#f4f0df;color:#244f3b;border-color:#b5c3a7}
 .purchase-buttons .purchase-buy:hover{background:#e7eddc;border-color:#244f3b}
 .purchase-feedback{flex-basis:100%;min-height:18px;font-size:12px;line-height:1.5;color:#476444}
-.cart-fly-dot{position:fixed;z-index:10000;pointer-events:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#d5e6b7;color:#234b36;border:1px solid #90ac74;box-shadow:0 5px 18px #173e2c26;font-size:12px;font-weight:700}
-.card .product-purchase.compact{gap:10px;margin-top:14px}
-.card .compact .quantity-control{height:42px}
-.card .compact .quantity-control button{width:36px;min-height:40px}
-.card .compact .quantity-control input{width:44px;min-height:40px}
+.cart-fly-dot{position:fixed;z-index:10000;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:5px;width:52px;height:40px;border-radius:20px;background:#244f3b;color:#fff8e9;border:1px solid #ffffff80;box-shadow:0 7px 24px #173e2c30;font-size:12px;font-weight:700;will-change:transform,opacity}
+.cart-fly-dot svg{width:17px;height:17px}
+.card .product-purchase.compact{order:3;gap:12px;margin-top:auto;padding:16px 3px 0;border-top:1px solid #e7eadd}
+.card>a{flex:0}
+.card h3{min-height:0;margin-bottom:12px}
+.card .compact .quantity-control{height:44px;border-radius:22px;background:#fbfcf8}
+.card .compact .quantity-control button{width:40px;min-height:42px;font-size:22px}
+.card .compact .quantity-control input{width:40px;min-height:42px}
 .card .compact .purchase-buttons{flex-basis:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.card .compact .purchase-buttons button{min-height:42px;padding:10px 8px;font-size:11px;white-space:normal;gap:5px;border-radius:8px}
+.card .compact .purchase-buttons button{min-height:46px;padding:11px 8px;font-size:12px;white-space:normal;gap:6px;border-radius:12px;transition:background .3s,border-color .3s,box-shadow .3s}
+.card .compact .purchase-add{box-shadow:0 3px 9px #244f3b14}
+.card .compact .purchase-buy{background:#f7f5e9}
 .card .compact .purchase-feedback{font-size:11px}
 .cart-item-name{flex:1;min-width:130px}
 .checkout-items{padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:24px}

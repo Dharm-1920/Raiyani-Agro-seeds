@@ -17,7 +17,7 @@ export function QuantityControl({ value, max, onChange, disabled = false, name =
 function animateCartAdd(button, quantity) {
   if (!button?.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   button.getAnimations().forEach(animation => animation.cancel());
-  button.animate([{ transform: 'scale(1)' }, { transform: 'scale(.95)', offset: .3 }, { transform: 'scale(1)' }], { duration: 320, easing: 'ease-out' });
+  button.animate([{ transform: 'scale(1)' }, { transform: 'scale(.97)', offset: .3 }, { transform: 'scale(1)' }], { duration: 520, easing: 'cubic-bezier(.22,.61,.36,1)' });
   const target = [document.querySelector('.cart-link'), document.querySelector('.menu-button')].find(element => {
     const rect = element?.getBoundingClientRect();
     return rect?.width > 0 && rect?.height > 0;
@@ -27,20 +27,27 @@ function animateCartAdd(button, quantity) {
   const dot = document.createElement('span');
   dot.className = 'cart-fly-dot';
   dot.setAttribute('aria-hidden', 'true');
-  dot.textContent = `+${quantity}`;
-  dot.style.left = `${from.left + from.width / 2 - 17}px`;
-  dot.style.top = `${from.top + from.height / 2 - 17}px`;
+  const icon = button.querySelector('svg')?.cloneNode(true);
+  if (icon) dot.appendChild(icon);
+  const count = document.createElement('span');
+  count.textContent = `+${quantity}`;
+  dot.appendChild(count);
+  dot.style.left = `${from.left + from.width / 2 - 26}px`;
+  dot.style.top = `${from.top + from.height / 2 - 20}px`;
   document.body.appendChild(dot);
   const dx = to.left + to.width / 2 - (from.left + from.width / 2);
   const dy = to.top + to.height / 2 - (from.top + from.height / 2);
-  const flight = dot.animate([
-    { transform: 'translate(0,0) scale(1)', opacity: 1 },
-    { transform: `translate(${dx * .45}px,${dy * .45 - 40}px) scale(.9)`, opacity: 1, offset: .5 },
-    { transform: `translate(${dx}px,${dy}px) scale(.25)`, opacity: 0 },
-  ], { duration: 650, easing: 'cubic-bezier(.25,.7,.4,1)' });
+  // Sample one continuous curve so the parcel never changes direction abruptly.
+  const frames = Array.from({ length: 25 }, (_, index) => {
+    const t = index / 24;
+    const x = dx * t;
+    const y = dy * t - 4 * 85 * t * (1 - t);
+    return { offset: t, transform: `translate(${x}px,${y}px) scale(${1 - .65 * t})`, opacity: t < .8 ? 1 : (1 - t) / .2 };
+  });
+  const flight = dot.animate(frames, { duration: 1250, easing: 'cubic-bezier(.4,0,.2,1)' });
   flight.finished.then(() => {
     dot.remove();
-    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 260 });
+    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'ease-in-out' });
   }, () => dot.remove());
 }
 
@@ -55,7 +62,7 @@ export function ProductPurchase({ product, compact = false }) {
   const remaining = Math.max(0, stock - inCart);
   useEffect(() => {
     if (!added) return;
-    const timer = setTimeout(() => setAdded(0), 1600);
+    const timer = setTimeout(() => setAdded(0), 2400);
     return () => clearTimeout(timer);
   }, [added]);
   const buyNow = () => navigate('/checkout', { state: { buyNow: { accountId: user.id, item: {
