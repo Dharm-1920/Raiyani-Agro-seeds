@@ -85,7 +85,6 @@ export default function App() {
           <NavLink to="/about">{tr("About us")}</NavLink>
           <NavLink to="/blog">{tr("Blog")}</NavLink>
           <NavLink to="/contact">{tr("Contact")}</NavLink>
-          <NavLink to="/cart" className="cart-link"><Icon name="bag" size={19} />{tr(" Cart ")}<span className="cart-count">{tr(count)}</span></NavLink>
           {tr(user?.role === 'admin' && <NavLink to="/admin">{tr("Admin")}</NavLink>)}
         </nav>
       </header>
