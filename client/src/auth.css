@@ -3,6 +3,34 @@
 @media(prefers-reduced-motion:reduce){.auth-method{transition:none}}
 main.auth-main{display:block;width:100%;max-width:none;padding:0;margin:0;min-width:0;background:#edf0e8}.auth-scene{width:100%;min-width:0}.auth-card .ras-brand,.auth-card .ras-wordmark>strong,.auth-card .ras-wordmark>span{color:#f1efdc}.auth-card .ras-wordmark>small{color:#becba8}.auth-card .language-selector{width:auto;flex:none}.auth-method{font-family:inherit;font-size:13px;font-weight:600}
 /* Keep the direct sign-in form within the original green theme. */
+.auth-scene {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 8% 12%, #c3d2b9 0%, transparent 48%),
+    radial-gradient(ellipse at 90% 85%, #d4dfbd 0%, transparent 46%),
+    linear-gradient(135deg, #f4f3e9 0%, #e8eddf 52%, #f3efdf 100%);
+}
+.auth-scene::before,
+.auth-scene::after { content: ''; position: absolute; z-index: -1; pointer-events: none; }
+.auth-scene::before {
+  inset: 0;
+  background:
+    repeating-radial-gradient(ellipse at -18% 115%, transparent 0 48px, #637e4e12 49px 50px, transparent 51px 85px),
+    radial-gradient(ellipse 60% 30% at 0% 100%, #8ba57430 0%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000, #0004 55%, transparent);
+}
+.auth-scene::after {
+  width: 540px;
+  height: 540px;
+  top: -270px;
+  right: -190px;
+  border: 1px solid #78915e25;
+  border-radius: 50%;
+  box-shadow: 0 0 0 45px #78915e0b, 0 0 0 90px #78915e08, 0 0 0 135px #78915e05;
+}
+.auth-card { box-shadow: 0 28px 80px #30432a24, 0 4px 16px #30432a0d; }
 .auth-password-control { margin-bottom: 20px; }
 .auth-field-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .auth-field-heading label { margin: 0; }
