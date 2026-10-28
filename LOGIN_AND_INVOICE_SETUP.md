@@ -1,6 +1,6 @@
 # Login, password recovery and invoice delivery
 
-Customer login and signup now start with phone, Google and email choices. Phone sign-in uses the saved phone number **and account password**, with no SMS charge. Indian ten-digit numbers normalize to +91; international numbers need their country code. Email remains required at signup for invoices and recovery. Existing email/password accounts continue to work.
+Customer login and signup open directly to the email/password form. Password recovery is beside the password label; Google is offered below the primary form, with phone sign-in available as an alternative. Phone sign-in uses the saved phone number **and account password**, with no SMS charge. Indian ten-digit numbers normalize to +91; international numbers need their country code. Email remains required at signup for invoices and recovery. Existing email/password accounts continue to work.
 
 New passwords need at least eight characters and at most 72 UTF-8 bytes. Password reset links expire after 30 minutes and work once. Resetting a password signs out previous sessions. Email verification links expire after 24 hours and work once. Tokens are hashed in MongoDB; raw tokens are never returned by the API or written to logs. Email links place the token in the URL fragment, which the browser removes after reading it.
 
@@ -18,10 +18,12 @@ The owner confirmed the new shop mailbox is **raiyaniagroseeds.support@gmail.com
 - Render's existing shop service has `MAIL_FROM`, `APP_URL`, and `BREVO_API_KEY` saved. The credential is stored only in Render, not in this repository.
 - The dedicated key is named **Raiyani Render transactional email**, with restricted access to **Transactional email** only. Its displayed expiry is **28 October 2027**; Brevo also expires it after 90 days of inactivity. Rotate it in Render before expiry.
 - These settings were saved without triggering a deploy. New email behavior requires deployment of this feature and a real verification/reset/invoice delivery check.
-- Google OAuth and automatic WhatsApp still need their separate credentials. Email sender verification does not complete either integration.
+- Google OAuth has since been configured separately as described below. Automatic WhatsApp still needs its separate credentials. Email sender verification does not complete either integration.
 - Brevo's existing account/security email is separate from its verified sender. Confirm the account profile separately if transferring account ownership to the support mailbox.
 
 ## 1. Google sign-in (one-time setup)
+
+Configured on 28 October 2026 under `raiyaniagroseeds.support@gmail.com`: project **Raiyani Agro Seeds** (`neural-journey-513010-t0`), web client **Raiyani Agro Seeds website**, External audience, **In production** publishing status. Render stores `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and the exact production callback below. No Google secrets are stored in Git. The app requests only `openid`, `email` and `profile`. The public homepage links to `/privacy`, and that same privacy URL is registered in Google Branding. No paid Cloud trial or billing account was activated.
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), choose the business-owned project and configure the OAuth consent screen with the shop name, contact email and appropriate audience.
 2. Create an **OAuth client ID → Web application**.

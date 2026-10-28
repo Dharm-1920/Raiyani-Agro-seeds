@@ -111,7 +111,7 @@ export function Welcome() {
       <div className="cover-bottom"><span><Icon name="pin" size={15} />{tr(SHOP.city)}</span><span>{tr('SEEDS · SOIL · GROWTH')}</span><a href="#discover-ras">{tr('Our roots, our people')}<span aria-hidden="true">↓</span></a></div>
     </section>
     <section className="cover-discover" id="discover-ras"><div className="cover-discover-heading"><span className="eyebrow">{tr('THE HEART OF RAS')}</span><h2>{tr('A local beginning.')}<br /><em>{tr('A growing story.')}</em></h2><p>{tr('Meet the family and the place behind every seed we share.')}</p></div><StoryCards /></section>
-    <footer className="cover-footer"><span>{tr(SHOP.name)} · {tr(SHOP.city)}</span><a href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr('Visit our shop')} ↗</a><span>{tr(SHOP.hours)}</span></footer>
+    <footer className="cover-footer"><span>{tr(SHOP.name)} · {tr(SHOP.city)}</span><a href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr('Visit our shop')} ↗</a><Link to="/privacy">{tr('Privacy policy')}</Link><span>{tr(SHOP.hours)}</span></footer>
   </div>;
 }
 

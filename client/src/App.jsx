@@ -11,7 +11,7 @@ import { animatePage } from './motion';
 import { NotificationBell, NotificationsPage } from './notifications.jsx';
 import { ProfileMenu } from './profile.jsx';
 import { Brand, LanguageSelector, useLanguage } from './language.jsx';
-import { CustomerAuth, ForgotPassword, ResetPassword, VerifyEmail } from './auth.jsx';
+import { CustomerAuth, ForgotPassword, ResetPassword, VerifyEmail, PrivacyPolicy } from './auth.jsx';
 function Guard({
   admin,
   children
@@ -53,7 +53,7 @@ export default function App() {
     return () => animation?.cancel();
   }, [loc.pathname, ready]);
   const adminArea = loc.pathname.startsWith('/admin');
-  const authArea = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(loc.pathname);
+  const authArea = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/privacy'].includes(loc.pathname);
   const coverArea = ['/', '/welcome'].includes(loc.pathname);
   const showStore = Boolean(user) && !adminArea && !authArea && !coverArea;
   if (!ready) return <p className="center" role="status">{tr("Checking your account\u2026")}</p>;
@@ -94,6 +94,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/account" element={<Guard><Account /></Guard>} />
           <Route path="/about" element={<Guard><About /></Guard>} />
           <Route path="/our-story" element={<Guard><Story /></Guard>} />
