@@ -10,7 +10,7 @@ Checkout offers Cash on Delivery and UPI QR. QR payment uses the shop's receivin
 
 ## Run locally
 
-Prerequisites: Node 18+, MongoDB (or `docker compose up -d` for MongoDB).
+Prerequisites: Node 22+, MongoDB (or `docker compose up -d` for MongoDB).
 
 ```bash
 cd server
@@ -45,7 +45,13 @@ Preserve your current `server/.env`, product uploads and MongoDB data when copyi
 
 See **UI_EDIT_GUIDE.md** for UI files and **ADMIN_SETUP.md** for admin access. APIs: `/api/auth/*`, `/api/account/cart`, `/api/products`, `/api/orders`, `/api/payments/options`, `/api/admin/*`, `/api/contact`.
 
-`npm test` in server runs 35 backend tests. `npm run build` in client builds the frontend. Mocked browser checks cover login-first access, account isolation, QR/reference submission, COD checkout and admin management. Actual MongoDB/bank transactions require local end-to-end verification.
+`npm test` in server runs 85 backend tests. `npm run build` in client builds the frontend. Mocked browser checks cover login-first access, account isolation, QR/reference submission, COD checkout, account recovery, invoice consent and admin management. Actual MongoDB/bank transactions and messaging providers require end-to-end verification with accounts you control.
+
+## Login and invoice delivery
+
+Customers can choose phone/password, email/password or Google sign-in/signup when configured. Forgot/reset password uses expiring, one-use email links. Resetting a password invalidates prior sessions. Verified customers can receive PDF purchase invoices by email; opted-in customers can also receive automatic WhatsApp PDFs through a configured provider. Manual PDF sharing to WhatsApp remains available without a messaging provider.
+
+See [login and invoice setup](LOGIN_AND_INVOICE_SETUP.md) to activate Google, email and optional WhatsApp delivery. These external features stay unavailable until the corresponding provider credentials and approved sender/template are connected. Email uses HTTPS on Render Free because that plan blocks SMTP ports. No paid messaging service is enabled by these code changes.
 
 ## Gujarati products
 

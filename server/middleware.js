@@ -6,9 +6,9 @@ const { User } = require('./models');
 const protect = async (req, res, next) => {
   try {
     const t = req.cookies.token || (req.headers.authorization || '').replace('Bearer ', '');
-    const { id } = jwt.verify(t, process.env.JWT_SECRET);
+    const { id, version = 0 } = jwt.verify(t, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     req.user = await User.findById(id).select('-password');
-    if (!req.user) throw new Error('no user');
+    if (!req.user || version !== (req.user.authVersion || 0)) throw new Error('no user');
     next();
   } catch { res.status(401).json({ message: 'Please log in' }); }
 };

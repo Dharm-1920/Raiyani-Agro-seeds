@@ -5,6 +5,7 @@ import { useNotifications } from './notifications.jsx';
 import { tr, productText, useLanguage } from './language.jsx';
 import api from './api';
 import Icon from './icons';
+import { AccountSecurity } from './auth.jsx';
 
 function Avatar({ name, large = false }) {
   const initials = (name || '').trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
@@ -87,6 +88,6 @@ export function AccountProfile() {
       {history.loading ? <p role="status">{tr('Loading…')}</p> : history.error ? <p className="err" role="alert">{tr('Could not load recent orders.')} <button className="link" onClick={() => setRetry(n => n + 1)}>{tr('Retry')}</button></p> : !history.items.length ? <div className="account-orders-empty"><Icon name="bag" size={28} /><p>{tr('Your first harvest starts here.')}</p><span>{tr('Your purchases will appear here after you place an order.')}</span><Link to="/shop">{tr('Browse products')} →</Link></div> : history.items.map(order => <Link className="account-order-row" to="/orders" key={order._id}><span className="account-order-icon"><Icon name="bag" size={20} /></span><div><strong>#{order._id.slice(-8).toUpperCase()}</strong><small>{order.items.map(item => `${productText(item)} × ${item.qty}`).join(', ')}</small><time dateTime={order.createdAt}>{new Date(order.createdAt).toLocaleDateString(language === 'gu' ? 'gu-IN' : 'en-IN')}</time></div><div className="account-order-total"><strong>{new Intl.NumberFormat(language === 'gu' ? 'gu-IN' : 'en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(order.totalAmount)}</strong><span className={'tag ' + order.orderStatus}>{tr(order.orderStatus)}</span></div><Icon name="arrow" size={16} /></Link>)}
     </section>
     <section className="account-panel" id="account-details"><div className="account-panel-heading"><div><span className="eyebrow">{tr('MADE PERSONAL')}</span><h2>{tr('Profile & delivery details')}</h2></div><Icon name="user" /></div><p className="account-form-note">{tr('Your saved details are filled in automatically at checkout. You can change them for each order.')}</p><form onSubmit={save}><fieldset disabled={busy}><label>{tr('Email')}<input type="email" value={user.email} readOnly /></label><div className="account-form-grid"><label>{tr('Name')}<input required maxLength={120} autoComplete="name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} /></label><label>{tr('Phone')}<input type="tel" maxLength={30} autoComplete="tel" value={form.phone} onChange={event => setForm({ ...form, phone: event.target.value })} /></label></div><label id="delivery-address">{tr('Delivery address')}<textarea ref={addressField} maxLength={1000} rows={4} autoComplete="street-address" value={form.address} onChange={event => setForm({ ...form, address: event.target.value })} /></label>{error && <p className="err" role="alert">{tr(error)}</p>}{message && <p className="ok" role="status">{tr(message)}</p>}<button type="submit">{tr(busy ? 'Saving…' : 'Save account details')}<Icon name="check" size={18} /></button></fieldset></form></section>
-    </div></div>
+    <AccountSecurity /></div></div>
   </div>;
 }

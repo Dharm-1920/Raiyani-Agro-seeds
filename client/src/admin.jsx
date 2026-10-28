@@ -105,7 +105,7 @@ export function AdminLogin() {
           })} /></label><label>{tr("Password")}<input type="password" autoComplete="current-password" required value={form.password} onChange={e => setForm({
             ...form,
             password: e.target.value
-          })} /></label>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Signing in…' : 'Open admin panel')}<Icon name="arrow" size={18} /></button><Link className="back-to-shop" to="/">{tr("\u2190 Back to the shop")}</Link></form></div></div>;
+          })} /></label><p><Link to="/forgot-password">{tr('Forgot password?')}</Link></p>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Signing in…' : 'Open admin panel')}<Icon name="arrow" size={18} /></button><Link className="back-to-shop" to="/">{tr("\u2190 Back to the shop")}</Link></form></div></div>;
 }
 function Dashboard({
   open

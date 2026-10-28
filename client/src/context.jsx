@@ -35,6 +35,7 @@ export function Providers({ children }) {
     adminLogin:b=>switchSession(()=>api.post('/auth/admin/login',b)),
     register:b=>switchSession(()=>api.post('/auth/register',b)),
     logout:()=>switchSession(()=>api.post('/auth/logout')),
+    refreshUser:async()=>{const accountId=userRef.current?.id;const {data}=await api.get('/auth/me').catch(error=>{if(error.response?.status===401)return {data:{user:null}};throw error;});if(userRef.current?.id===accountId){userRef.current=data.user;setUser(data.user);}return data.user;},
     updateProfile:async b=>{const accountId=userRef.current?.id;const {data}=await api.put('/auth/me',{...b,accountId});if(userRef.current?.id!==accountId)throw new Error('Your account changed. Please sign in again.');setUser(data.user);return data.user;},
   };
   const items=user && cart.owner===user.id ? cart.items : [];

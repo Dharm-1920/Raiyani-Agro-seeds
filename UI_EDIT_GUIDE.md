@@ -15,6 +15,8 @@ Start with **client/src/refined.css**. This contains the premium design and is l
 | client/src/ProductArt.jsx | Category and placeholder product illustrations |
 | client/src/admin.jsx | Admin sign-in, sidebar, dashboard and management screens |
 | client/src/admin.css | Admin page styling and mobile layout |
+| client/src/auth.jsx and client/src/auth.css | Customer login/signup choices, password recovery, email verification and account security |
+| client/src/invoice.jsx | Invoice downloads, WhatsApp sharing and delivery status |
 | client/src/config.js | Shop name, phone, address area, map and opening hours |
 | client/public/assets/farm-sunrise.png | Hero photograph |
 

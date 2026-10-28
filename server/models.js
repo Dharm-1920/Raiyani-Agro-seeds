@@ -4,6 +4,11 @@ const User = mongoose.model('User', new Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   phone: String, address: String,
+  phoneLogin: { type: String, unique: true, sparse: true },
+  googleId: { type: String, unique: true, sparse: true },
+  emailVerified: { type: Boolean, default: false },
+  passwordEnabled: { type: Boolean, default: true },
+  authVersion: { type: Number, default: 0 },
   cart: [{ product: { type: Schema.Types.ObjectId, ref: 'Product' }, qty: { type: Number, min: 1, max: 10000 } }],
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
@@ -40,6 +45,11 @@ const Order = mongoose.model('Order', new Schema({
   stockRestored: { type: Boolean, default: false },
   adminNoticePending: { type: Boolean, default: false },
   deliveryNoticePending: { type: Boolean, default: false },
+  invoiceNoticePending: { type: Boolean, default: false },
+  invoiceEmail: String,
+  invoiceLanguage: { type: String, enum: ['en', 'gu'], default: 'en' },
+  invoiceWhatsApp: { type: Boolean, default: false },
+  invoicePhone: String,
   refundStatus: { type: String, enum: ['none', 'pending_review', 'completed'], default: 'none' },
 }, { timestamps: true }));
 const Message = mongoose.model('Message', new Schema({
@@ -68,4 +78,29 @@ const ProductImage = mongoose.model('ProductImage', new Schema({
   contentType: { type: String, enum: ['image/jpeg', 'image/png', 'image/webp'], required: true },
   data: { type: Buffer, required: true },
 }, { timestamps: true }));
-module.exports = { User, Product, Order, Message, Notification, StockSubscription, ProductImage };
+const authTokenSchema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  purpose: { type: String, enum: ['reset', 'verify'], required: true },
+  tokenHash: { type: String, required: true, unique: true },
+  expiresAt: { type: Date, required: true },
+}, { timestamps: true });
+authTokenSchema.index({ user: 1, purpose: 1 }, { unique: true });
+authTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+const AuthToken = mongoose.model('AuthToken', authTokenSchema);
+const invoiceDeliverySchema = new Schema({
+  order: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  channel: { type: String, enum: ['email', 'whatsapp'], required: true },
+  recipient: { type: String, required: true },
+  language: { type: String, enum: ['en', 'gu'], default: 'en' },
+  status: { type: String, enum: ['pending', 'sending', 'accepted', 'failed'], default: 'pending' },
+  attempts: { type: Number, default: 0 },
+  nextAttemptAt: { type: Date, default: Date.now },
+  leaseUntil: Date, acceptedAt: Date, providerId: String,
+  // Safe diagnostic codes only: never store SMTP credentials, tokens, or provider response bodies.
+  lastError: String,
+}, { timestamps: true });
+invoiceDeliverySchema.index({ order: 1, channel: 1 }, { unique: true });
+invoiceDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
+const InvoiceDelivery = mongoose.model('InvoiceDelivery', invoiceDeliverySchema);
+module.exports = { User, Product, Order, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery };

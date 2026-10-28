@@ -20,6 +20,9 @@ router.post('/', async (req, res) => {
   if (!Array.isArray(items) || !items.length) return res.status(400).json({ message: 'Cart is empty' });
   if (items.length > 100 || items.some(it => !it || !Number.isSafeInteger(Number(it.qty)) || Number(it.qty) <= 0 || Number(it.qty) > 10000)) return res.status(400).json({ message: 'Use whole-number quantities between 1 and 10000.' });
   if (!shipping || !shipping.name || !shipping.phone || !shipping.address) return res.status(400).json({ message: 'Shipping details required' });
+  const { normalizePhone } = require('../services/identity');
+  const invoicePhone = normalizePhone(shipping.phone);
+  if (req.body.invoiceWhatsApp && !invoicePhone) return res.status(400).json({ message: 'Enter a valid WhatsApp phone number with country code.' });
   if (!['cod', 'upi'].includes(paymentMethod)) return res.status(400).json({ message: 'Invalid payment method' });
   if (paymentMethod === 'upi' && !configured()) return res.status(400).json({ message: 'UPI QR payment is not configured. Use Cash on Delivery.' });
   const lines = [];
@@ -38,6 +41,10 @@ router.post('/', async (req, res) => {
     totalAmount: itemsTotal + shippingFee, paymentMethod,
     orderStatus: paymentMethod === 'cod' ? 'confirmed' : 'placed',
     adminNoticePending: true,
+    invoiceNoticePending: true, invoiceEmail: req.user.email,
+    invoiceLanguage: req.body.invoiceLanguage === 'gu' ? 'gu' : 'en',
+    invoiceWhatsApp: req.body.invoiceWhatsApp === true,
+    invoicePhone: invoicePhone || undefined,
   });
   saved = order;
   const response = paymentMethod === 'upi' ? await checkoutData(order) : { order };
@@ -69,11 +76,19 @@ router.post('/:id/payment-reference', async (req,res)=>{
 });
 router.get('/my', async (req, res) => res.json(await Order.find({ user: req.user._id }).sort({ createdAt: -1 })));
 const getOwned = async (req) => {
-  const o = await Order.findById(req.params.id).populate('user', 'name email').catch(() => null);
+  const o = await Order.findById(req.params.id).populate('user', 'name email emailVerified').catch(() => null);
   if (!o) return null;
   return req.user.role === 'admin' || String(o.user._id) === String(req.user._id) ? o : null;
 };
 router.get('/:id', async (req, res) => { const o = await getOwned(req); o ? res.json(o) : res.status(404).json({ message: 'Order not found' }); });
+router.get('/:id/invoice-delivery', async (req, res) => {
+  try {
+    const order = await getOwned(req);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    const rows = await require('../models').InvoiceDelivery.find({ order: order._id }).select('channel status lastError acceptedAt');
+    res.json({ emailConfigured: require('../services/mail').configured(), whatsappConfigured: require('../services/invoice-delivery').whatsappConfigured(), emailVerified: Boolean(order.user?.emailVerified), whatsappRequested: Boolean(order.invoiceWhatsApp), queued: Boolean(order.invoiceNoticePending), deliveries: rows });
+  } catch { res.status(503).json({ message: 'Invoice delivery status could not be loaded.' }); }
+});
 router.put('/:id/cancel', async (req, res) => {
   try { res.json({ order: await cancelOrder(req.params.id, req.user) }); }
   catch(e) { res.status(e.status || 500).json({ message: e.status ? e.message : 'Cancellation could not finish. Retry to complete it safely.' }); }

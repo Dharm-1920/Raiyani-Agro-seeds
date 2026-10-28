@@ -1,5 +1,5 @@
 import { WhyChooseUs, ShopDetails, FAQs, WixIntroduction, ProductIntroduction } from './business.jsx';
-import { tr, productText } from "./language.jsx";
+import { tr, productText, useLanguage } from "./language.jsx";
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import api, { errMsg } from './api';
@@ -9,8 +9,8 @@ import Icon from './icons';
 import ProductArt from './ProductArt';
 import { AccountProfile } from './profile.jsx';
 import { NotifyButton } from './notifications.jsx';
-import { Brand, LanguageSelector } from './language.jsx';
-import InvoiceButton from './invoice.jsx';
+
+import InvoiceButton, { InvoicePreferences } from './invoice.jsx';
 import { PaymentQR, paymentError, refundText } from './payment.jsx';
 export const rs = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 export function Img({
@@ -188,6 +188,8 @@ export function Cart() {
       <Link className="btn" to="/checkout">{tr("Checkout")}</Link></div>;
 }
 export function Checkout() {
+  const { language } = useLanguage();
+  const [invoiceWhatsApp, setInvoiceWhatsApp] = useState(false);
   const {
       user,
       updateProfile
@@ -234,7 +236,9 @@ export function Checkout() {
           qty: i.qty
         })),
         shipping,
-        paymentMethod: method
+        paymentMethod: method,
+        invoiceWhatsApp,
+        invoiceLanguage: language
       });
       created = data.order;
       clear();
@@ -264,13 +268,13 @@ export function Checkout() {
   return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><label>{tr("Name")}<input required autoComplete="name" value={shipping.name} onChange={e => setShipping({
         ...shipping,
         name: e.target.value
-      })} /></label><label>{tr("Phone")}<input required type="tel" autoComplete="tel" pattern="[0-9+ ]{10,14}" value={shipping.phone} onChange={e => setShipping({
+      })} /></label><label>{tr("Phone")}<input required type="tel" autoComplete="tel" inputMode="tel" maxLength={30} pattern="[0-9+ ]{8,30}" value={shipping.phone} onChange={e => setShipping({
         ...shipping,
         phone: e.target.value
       })} /></label><label>{tr("Delivery address")}<textarea required autoComplete="street-address" rows="3" value={shipping.address} onChange={e => setShipping({
         ...shipping,
         address: e.target.value
-      })} /></label><label className="save-address"><input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} />{tr(" Save these delivery details to my account")}</label><h3>{tr("Choose payment")}</h3><div className="payment-choices"><label className={method === 'cod' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>{tr("Cash on Delivery")}</b><small>{tr("Pay when your order arrives")}</small></span></label><label className={method === 'upi' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'upi'} disabled={!options?.upi} onChange={() => setMethod('upi')} /><span><b>{tr("UPI QR payment")}</b><small>{tr("Scan and pay with your UPI app")}</small></span></label></div>{tr(!options ? <p className="muted">{tr("Checking payment options\u2026")}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null)}<div className="checkout-total"><span>{tr("Items ")}{tr(rs(total))}{tr(" + shipping ")}{tr(rs(fee))}</span><b>{tr(rs(total + fee))}</b></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order')}</button></form>;
+      })} /></label><label className="save-address"><input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} />{tr(" Save these delivery details to my account")}</label><InvoicePreferences user={user} phone={shipping.phone} whatsapp={invoiceWhatsApp} setWhatsapp={setInvoiceWhatsApp} /><h3>{tr("Choose payment")}</h3><div className="payment-choices"><label className={method === 'cod' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>{tr("Cash on Delivery")}</b><small>{tr("Pay when your order arrives")}</small></span></label><label className={method === 'upi' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'upi'} disabled={!options?.upi} onChange={() => setMethod('upi')} /><span><b>{tr("UPI QR payment")}</b><small>{tr("Scan and pay with your UPI app")}</small></span></label></div>{tr(!options ? <p className="muted">{tr("Checking payment options\u2026")}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null)}<div className="checkout-total"><span>{tr("Items ")}{tr(rs(total))}{tr(" + shipping ")}{tr(rs(fee))}</span><b>{tr(rs(total + fee))}</b></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order')}</button></form>;
 }
 export function MyOrders() {
   const loc = useLocation();
@@ -310,47 +314,6 @@ export function MyOrders() {
         load();
       }}>{tr("Refresh orders")}</button></div>{tr(qrOrder && <PaymentQR orderId={qrOrder} onClose={() => setQrOrder(null)} onSubmitted={load} />)} {tr(loc.state?.placed && !loc.state?.paymentMessage && <p className="ok">{tr("Thank you! Your order was placed.")}</p>)}{tr(message && <p className="payment-note" role="status">{tr(message)}</p>)}{tr(error && <p className="err" role="alert">{tr(error)}</p>)}{tr(!orders ? <p className="center">{tr(error ? 'Could not load orders. Use Refresh orders to retry.' : 'Loading…')}</p> : !orders.length ? <p>{tr("No orders yet. ")}<Link to="/shop">{tr("Browse the shop")}</Link></p> : orders.map(o => <div className="order" key={o._id}><div className="row"><b>#{tr(o._id.slice(-8).toUpperCase())}</b><span>{tr(new Date(o.createdAt).toLocaleDateString('en-IN'))}</span><span className={'tag ' + o.orderStatus}>{tr(o.orderStatus)}</span><span className="tag">{tr(o.paymentMethod === 'upi' ? 'UPI QR' : o.paymentMethod === 'cod' ? 'COD' : 'Online')} · {tr(o.paymentStatus)}</span><b>{tr(rs(o.totalAmount))}</b></div><ul>{tr(o.items.map((i, k) => <li key={k}>{productText(i)} × {tr(i.qty)}</li>))}</ul>{tr(refundText(o) && <p className="payment-note">{tr(refundText(o))}</p>)}{tr(o.paymentReference && <p className="muted">{tr("UPI reference: ")}{o.paymentReference}{tr(o.paymentStatus === 'pending' ? ' · Awaiting shop verification' : '')}</p>)}{tr(o.cancelledBy && <p className="muted">{tr("Cancelled by ")}{tr(o.cancelledBy === 'admin' ? 'the shop' : 'you')}.</p>)}<div className="order-actions"><InvoiceButton orderId={o._id}/>{tr(o.paymentMethod === 'upi' && ['pending', 'failed'].includes(o.paymentStatus) && ['placed', 'confirmed'].includes(o.orderStatus) && <button disabled={Boolean(busy)} onClick={() => setQrOrder(o._id)}>{tr("Show payment QR")}</button>)}{tr((['placed', 'confirmed'].includes(o.orderStatus) || o.orderStatus === 'cancelled' && o.cancelledAt && o.stockRestored === false) && <button className="cancel-button" disabled={Boolean(busy)} onClick={() => cancel(o)}>{tr(busy === o._id ? 'Please wait…' : o.orderStatus === 'cancelled' ? 'Complete cancellation' : 'Cancel order')}</button>)}</div></div>))}</div>;
 }
-function AuthForm({
-  register
-}) {
-  const {
-      login,
-      register: reg
-    } = useAuth(),
-    nav = useNavigate(),
-    loc = useLocation();
-  const [f, setF] = useState({
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      address: ''
-    }),
-    [err, setErr] = useState('');
-  const submit = async e => {
-    e.preventDefault();
-    setErr('');
-    try {
-      register ? await reg(f) : await login(f);
-      nav(loc.state?.from || '/', {
-        replace: true
-      });
-    } catch (x) {
-      setErr(errMsg(x));
-    }
-  };
-  const inp = (k, label, type = 'text', req = true) => <label>{tr(label)}<input type={type} required={req} minLength={k === 'password' ? 6 : undefined} value={f[k]} onChange={e => setF({
-      ...f,
-      [k]: e.target.value
-    })} /></label>;
-  return <form className="box narrow customer-auth" onSubmit={submit}><Link to="/login" className="auth-brand"><Brand large /></Link><LanguageSelector /><span className="eyebrow">{tr("YOUR FARMING ACCOUNT")}</span><h1>{tr(register ? 'Create account' : 'Login')}</h1><p>{tr("Sign in to browse, save your cart and manage your orders.")}</p>
-      {tr(register && inp('name', 'Full name'))}{tr(inp('email', 'Email', 'email'))}{tr(inp('password', 'Password', 'password'))}
-      {tr(register && <>{tr(inp('phone', 'Phone', 'tel', false))}{tr(inp('address', 'Delivery address (optional)', 'text', false))}<p className="muted">{tr("You can add your address later or at checkout.")}</p></>)}
-      {tr(err && <p className="err">{tr(err)}</p>)}<button>{tr(register ? 'Sign up' : 'Login')}</button>
-      <p>{tr(register ? <>{tr("Have an account? ")}<Link to="/login">{tr("Login")}</Link></> : <>{tr("New here? ")}<Link to="/register">{tr("Create account")}</Link></>)}</p></form>;
-}
-export const Login = () => <AuthForm />;
-export const Register = () => <AuthForm register />;
 export function Account() { const { user } = useAuth(); return <AccountProfile key={user.id} />; }
 export function Contact() {
   const [f, setF] = useState({

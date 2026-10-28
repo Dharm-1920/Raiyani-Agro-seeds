@@ -3,7 +3,7 @@ import { tr } from "./language.jsx";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useCart } from './context';
 import { SHOP } from './config';
-import { Home, Shop, Product, Cart, Checkout, MyOrders, Login, Register, Contact, Account } from './pages';
+import { Home, Shop, Product, Cart, Checkout, MyOrders, Contact, Account } from './pages';
 import Admin, { AdminLogin } from './admin';
 import { useEffect, useState } from 'react';
 import Icon from './icons';
@@ -11,6 +11,7 @@ import { animatePage } from './motion';
 import { NotificationBell, NotificationsPage } from './notifications.jsx';
 import { ProfileMenu } from './profile.jsx';
 import { Brand, LanguageSelector, useLanguage } from './language.jsx';
+import { CustomerAuth, ForgotPassword, ResetPassword, VerifyEmail } from './auth.jsx';
 function Guard({
   admin,
   children
@@ -52,7 +53,7 @@ export default function App() {
     return () => animation?.cancel();
   }, [loc.pathname, ready]);
   const adminArea = loc.pathname.startsWith('/admin');
-  const authArea = ['/login', '/register'].includes(loc.pathname);
+  const authArea = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(loc.pathname);
   const coverArea = ['/', '/welcome'].includes(loc.pathname);
   const showStore = Boolean(user) && !adminArea && !authArea && !coverArea;
   if (!ready) return <p className="center" role="status">{tr("Checking your account\u2026")}</p>;
@@ -88,8 +89,11 @@ export default function App() {
           <Route path="/checkout" element={<Guard><Checkout /></Guard>} />
           <Route path="/orders" element={<Guard><MyOrders /></Guard>} />
           <Route path="/notifications" element={<Guard><NotificationsPage /></Guard>} />
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-          <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+          <Route path="/login" element={user ? <Navigate to="/home" replace /> : <CustomerAuth />} />
+          <Route path="/register" element={user ? <Navigate to="/home" replace /> : <CustomerAuth register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/account" element={<Guard><Account /></Guard>} />
           <Route path="/about" element={<Guard><About /></Guard>} />
           <Route path="/our-story" element={<Guard><Story /></Guard>} />

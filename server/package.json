@@ -2,6 +2,7 @@
   "name": "raiyani-server",
   "version": "1.0.0",
   "main": "server.js",
+  "engines": { "node": ">=22" },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -15,10 +16,12 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
+    "google-auth-library": "^11.3.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.1",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.2.1",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4"
   }
