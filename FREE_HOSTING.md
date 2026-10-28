@@ -6,7 +6,7 @@ Chosen setup: one **Render Free web service** serves the React frontend and Expr
 
 The shop now runs at `https://raiyaniagroseeds.onrender.com` on a new Free service using the existing Atlas database and image storage. Health, eight products and three product images passed checks at the new address. The previous service remains at `https://raiyani-agro-seeds.onrender.com` during the transition; renaming its dashboard entry did not change that address.
 
-The new service's `APP_URL`, `CLIENT_URL` and `GOOGLE_REDIRECT_URI` use the new address. Google sign-in still needs `https://raiyaniagroseeds.onrender.com/api/auth/google/callback` added to the existing OAuth client's authorized redirect URIs in Google Cloud. Console access is currently blocked by the account's two-step verification requirement. Preserve the old callback until the transition is complete.
+The new service's `APP_URL`, `CLIENT_URL` and `GOOGLE_REDIRECT_URI` use the new address. On 28 October 2026, `https://raiyaniagroseeds.onrender.com/api/auth/google/callback` was saved in the existing Google OAuth client's authorized redirect URIs. A full live Google sign-in returned successfully to `/home`. The old callback remains authorized during the transition. Local callbacks at `http://127.0.0.1:5173/api/auth/google/callback` and `http://localhost:5173/api/auth/google/callback` are also authorized; the ignored local server environment uses the 127.0.0.1 callback and existing client credentials.
 
 ## Initial deployment completed — 27 October 2026
 

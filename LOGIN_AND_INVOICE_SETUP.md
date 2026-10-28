@@ -23,6 +23,8 @@ The owner confirmed the new shop mailbox is **raiyaniagroseeds.support@gmail.com
 
 ## 1. Google sign-in (one-time setup)
 
+The website address change was completed on 28 October 2026: the new Render callback below is authorized, and a full live Google sign-in reached `/home` with a verified, Google-linked account. The old Render callback remains authorized. Both `http://127.0.0.1:5173/api/auth/google/callback` and `http://localhost:5173/api/auth/google/callback` are authorized for local development. The ignored local `server/.env` is configured with the existing client credentials, `APP_URL=http://127.0.0.1:5173` and the matching 127.0.0.1 callback. Restart the local API after changing these values; no credentials belong in Git.
+
 Configured on 28 October 2026 under `raiyaniagroseeds.support@gmail.com`: project **Raiyani Agro Seeds** (`neural-journey-513010-t0`), web client **Raiyani Agro Seeds website**, External audience, **In production** publishing status. Render stores `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and the exact production callback below. No Google secrets are stored in Git. The app requests only `openid`, `email` and `profile`. The public homepage links to `/privacy`, and that same privacy URL is registered in Google Branding. No paid Cloud trial or billing account was activated.
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), choose the business-owned project and configure the OAuth consent screen with the shop name, contact email and appropriate audience.
