@@ -67,8 +67,8 @@ export default function App() {
           e.preventDefault();
           navigate('/shop?search=' + encodeURIComponent(search.trim()));
         }}><Icon name="search" size={17} /><input aria-label={tr("Search the shop")} placeholder={tr("What does your farm need?")} value={search} onChange={e => setSearch(e.target.value)} /><button aria-label={tr("Submit search")}><Icon name="arrow" size={17} /></button></form>
-        <NotificationBell /><ProfileMenu /><button className="menu-button" aria-label={tr("Toggle navigation")} aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name="menu" /></button></div>
-        <nav className={menu ? "open" : ""}>
+        <NotificationBell /><ProfileMenu /><button className="menu-button" aria-label={tr("Toggle navigation")} aria-controls="store-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name="menu" /></button></div>
+        <nav id="store-navigation" className={menu ? "open" : ""}>
           <LanguageSelector /><NavLink to="/home" end>{tr("Home")}</NavLink>
           <NavLink to="/shop">{tr("Shop")}</NavLink>
           <NavLink to="/about">{tr("About us")}</NavLink>

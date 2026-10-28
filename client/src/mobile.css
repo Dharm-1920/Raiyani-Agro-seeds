@@ -1,0 +1,29 @@
+@media (max-width:760px) {
+  .nav { padding:16px; gap:0 12px; }
+  .nav>nav.open { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; width:100%; padding-top:14px; }
+  .nav>nav>a:not(.cart-link) { display:flex; align-items:center; min-height:46px; padding:12px 14px; border:1px solid #e0e5d6; border-radius:10px; background:#f4f5ed; color:#35533c; font-size:15px; line-height:1.4; white-space:normal; overflow-wrap:anywhere; }
+  .nav>nav>a.active:not(.cart-link) { background:#244f3b; border-color:#244f3b; color:#fffaf0; }
+  .nav>nav>a:hover:not(.active) { background:#e7eddf; color:#244f3b; }
+  .nav>nav .cart-link { grid-column:1/-1; justify-content:center; gap:10px; min-height:46px; padding:12px; font-size:15px; }
+  .nav>nav .language-selector { grid-column:1/-1; order:-1; width:100%; margin:0 0 5px; padding:0 0 13px; border-top:0; border-bottom:1px solid var(--line); }
+  .nav .language-selector button { min-height:40px; padding:9px 14px; font-size:13px; }
+  .nav .menu-button { width:42px; height:42px; padding:9px; flex-shrink:0; }
+  .nav .menu-button[aria-expanded="true"] { background:#244f3b; border-color:#244f3b; color:#fffaf0; }
+  .shop-chips { flex-wrap:nowrap; overflow-x:auto; gap:8px; padding:1px 1px 9px; margin-bottom:14px; scrollbar-width:thin; }
+  .shop-chips button { flex:0 0 auto; min-height:40px; padding:10px 15px; font-size:12px; }
+  .bar input,.bar select { font-size:16px; min-height:44px; min-width:0; }
+  .card .compact .quantity-control { max-width:100%; }
+  .card .compact .quantity-control button { width:34px; }
+  .card .compact .quantity-control input { width:34px; }
+}
+@media (max-width:400px) {
+  .nav { padding:14px 12px; gap:0 8px; }
+  .nav .ras-emblem { width:36px; height:36px; }
+  .nav .ras-brand { gap:7px; }
+  .nav .ras-wordmark>strong { font-size:20px; letter-spacing:1.5px; }
+  .nav .ras-wordmark>span { font-size:7px; letter-spacing:1.5px; }
+  .nav .ras-wordmark>small { font-size:4px; letter-spacing:.6px; }
+  .nav .header-tools { gap:5px; }
+  .nav .menu-button { width:36px; height:36px; padding:7px; }
+  .nav .profile-trigger { width:36px; height:36px; }
+}
