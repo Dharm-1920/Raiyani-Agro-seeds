@@ -2,9 +2,15 @@
 
 Chosen setup: one **Render Free web service** serves the React frontend and Express API together. **MongoDB Atlas Free** stores accounts, orders, products, notifications and uploaded product images. The resulting public address will end in `.onrender.com`, subject to name availability.
 
-## Deployment completed — 27 October 2026
+## Website address updated — 28 October 2026
 
-Public shop: [raiyani-agro-seeds.onrender.com](https://raiyani-agro-seeds.onrender.com/). Render service: `srv-dbgbv8ks728c73dv73pg`. Production admin sign-in, products, three migrated images, route refreshes, guest access restrictions, notifications, saved-cart reads and a Gujarati invoice passed live checks. The local backend suite has 57 passing tests.
+The shop now runs at `https://raiyaniagroseeds.onrender.com` on a new Free service using the existing Atlas database and image storage. Health, eight products and three product images passed checks at the new address. The previous service remains at `https://raiyani-agro-seeds.onrender.com` during the transition; renaming its dashboard entry did not change that address.
+
+The new service's `APP_URL`, `CLIENT_URL` and `GOOGLE_REDIRECT_URI` use the new address. Google sign-in still needs `https://raiyaniagroseeds.onrender.com/api/auth/google/callback` added to the existing OAuth client's authorized redirect URIs in Google Cloud. Console access is currently blocked by the account's two-step verification requirement. Preserve the old callback until the transition is complete.
+
+## Initial deployment completed — 27 October 2026
+
+Public shop: [raiyaniagroseeds.onrender.com](https://raiyaniagroseeds.onrender.com/). Render service: `srv-dbgvmflg1s2s73cddrbg`. Production admin sign-in, products, three migrated images, route refreshes, guest access restrictions, notifications, saved-cart reads and a Gujarati invoice passed live checks. The local backend suite has 57 passing tests.
 
 Cash on Delivery is enabled. The development UPI value was a placeholder and was deliberately omitted from the public service; add the owner's verified receiving UPI ID to Render's environment before accepting QR payments.
 

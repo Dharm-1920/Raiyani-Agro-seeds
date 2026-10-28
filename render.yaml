@@ -1,7 +1,7 @@
 # Entire shop on Render Free. Images and shop data persist in MongoDB Atlas.
 services:
   - type: web
-    name: raiyani-agro-seeds
+    name: raiyaniagroseeds
     runtime: node
     plan: free
     buildCommand: npm --prefix client ci --include=dev && npm --prefix client run build && npm --prefix server ci --omit=dev

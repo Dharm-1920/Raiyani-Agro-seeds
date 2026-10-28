@@ -28,8 +28,8 @@ Configured on 28 October 2026 under `raiyaniagroseeds.support@gmail.com`: projec
 1. In [Google Cloud Console](https://console.cloud.google.com/), choose the business-owned project and configure the OAuth consent screen with the shop name, contact email and appropriate audience.
 2. Create an **OAuth client ID → Web application**.
 3. Add this exact authorized redirect URI:
-   `https://raiyani-agro-seeds.onrender.com/api/auth/google/callback`
-4. In Render, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` to that URI, and `APP_URL=https://raiyani-agro-seeds.onrender.com`.
+   `https://raiyaniagroseeds.onrender.com/api/auth/google/callback`
+4. In Render, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` to that URI, and `APP_URL=https://raiyaniagroseeds.onrender.com`.
 5. Save and redeploy. In Google testing mode, add the accounts permitted to test. Complete Google's publishing/verification requirements before opening sign-in to all customers.
 6. Test new-account signup, returning Google login and logout.
 
@@ -46,7 +46,7 @@ Render Free [blocks SMTP ports 25, 465 and 587](https://render.com/docs/free), s
 1. Create or sign in to the shop's [Brevo](https://www.brevo.com/) account. Choose a suitable plan and verify the business sender email; complete any provider approval requirements. Do not enable a paid plan without the owner's approval.
 2. Verify `raiyaniagroseeds.support@gmail.com` as the sender before enabling delivery. Provider requirements for sender domains and verification can change.
 3. Create a transactional-email API key and enter it directly in Render as `BREVO_API_KEY`.
-4. Set `MAIL_FROM=raiyaniagroseeds.support@gmail.com` after the provider verifies it, and `APP_URL=https://raiyani-agro-seeds.onrender.com`.
+4. Set `MAIL_FROM=raiyaniagroseeds.support@gmail.com` after the provider verifies it, and `APP_URL=https://raiyaniagroseeds.onrender.com`.
 5. Save and redeploy. Use a test customer account you control to request a verification link and reset link. Confirm the links point at the public shop and work once.
 6. Verify the customer's email, then place a test purchase to confirm the actual PDF invoice arrives and its payment status is correct.
 
@@ -64,7 +64,7 @@ Official reference: [Brevo transactional email API](https://developers.brevo.com
 
 1. Set up an approved Twilio WhatsApp sender and an approved utility **document/media** template. Verify all provider, business and regional requirements.
 2. Configure the template body with `{{1}}` = short order reference and `{{2}}` = total, without implying pending payments have been received.
-3. Configure its media URL as `https://raiyani-agro-seeds.onrender.com/{{3}}`. Variable `{{3}}` is the expiring PDF path, including its `.pdf` suffix. Submit a valid public sample PDF when requesting template approval; use no real customer details in the sample.
+3. Configure its media URL as `https://raiyaniagroseeds.onrender.com/{{3}}`. Variable `{{3}}` is the expiring PDF path, including its `.pdf` suffix. Submit a valid public sample PDF when requesting template approval; use no real customer details in the sample.
 4. In Render set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` (international number), and `TWILIO_WHATSAPP_CONTENT_SID` (the approved document template).
 5. At checkout, the customer must tick the invoice consent checkbox for the displayed delivery phone number. It is unchecked by default. No WhatsApp job is created without that consent.
 6. Test with a consenting number you control. The PDF URL is a bearer link that expires after seven days; anyone holding it can access that invoice during that period. Normal invoice downloads remain protected by account ownership. Revoking the order's WhatsApp consent or removing its delivery job invalidates the media link.

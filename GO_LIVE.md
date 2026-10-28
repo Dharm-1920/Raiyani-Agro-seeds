@@ -2,7 +2,7 @@
 
 **Current selection: free hosting for the fully working shop. Follow [FREE_HOSTING.md](FREE_HOSTING.md).** The current `render.yaml` runs the entire shop on Render Free with MongoDB image storage. The older Vercel/paid-backend approach below is an alternative and is not the selected deployment plan.
 
-Status: **live on Render Free** at [raiyani-agro-seeds.onrender.com](https://raiyani-agro-seeds.onrender.com/). The separate Atlas database has been migrated and public checks passed for secure admin login, products, migrated images, direct routes, account privacy, notifications, saved carts and Gujarati invoices. No paid hosting plan was activated. See the current free-hosting guide for administration details.
+Status: **live on Render Free** at [raiyaniagroseeds.onrender.com](https://raiyaniagroseeds.onrender.com/). The separate Atlas database has been migrated and public checks passed for secure admin login, products, migrated images, direct routes, account privacy, notifications, saved carts and Gujarati invoices. No paid hosting plan was activated. See the current free-hosting guide for administration details.
 
 The frontend can use Vercel for a public `*.vercel.app` address. This shop also needs its Express API, MongoDB database, and uploaded images online. Uploading the frontend alone will not make accounts or purchases work.
 
