@@ -2,7 +2,7 @@
 
 ## Save a customer once
 
-On **Admin → Counter bills**, **Save this customer for future visits when saving the bill** is checked for a new customer. Enter their name, optional phone and address, then save the bill. The customer profile is saved and the bill is linked to it. Uncheck this option for a one-off walk-in bill.
+On **Admin → Counter bills**, **Save this customer for future visits when saving the bill** is checked for a new customer. Enter their name and optional phone, then save the bill. The customer profile is saved and the bill is linked to it. Uncheck this option for a one-off walk-in bill. Counter billing and the customer editor no longer ask for an optional address; existing saved addresses are retained for historic records and linked bill snapshots.
 
 On the next visit, start typing directly in **Customer name**. After two characters, matching saved customers appear beneath that field, with their phone and address to distinguish similar names. Select a suggestion to fill their saved details and preferred bill language, or keep typing and enter a new customer's details. Arrow keys and Enter select a suggestion; Escape closes the suggestions. There is no separate returning-customer search. You can also open **Admin → Counter customers → Make bill**. Product lines and prices remain specific to the new sale. Invoice and reminder WhatsApp permissions are chosen separately for each bill, not copied automatically from a previous visit.
 

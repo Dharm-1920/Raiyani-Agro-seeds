@@ -16,6 +16,7 @@ import './profile.css';
 import './auth.css';
 import './purchase.css';
 import './mobile.css';
+import './action-links.css';
 createRoot(document.getElementById('root')).render(
   <ErrorBoundary><BrowserRouter><Providers><NotificationProvider><App /></NotificationProvider></Providers></BrowserRouter></ErrorBoundary>
 );
