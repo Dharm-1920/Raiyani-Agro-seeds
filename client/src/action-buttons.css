@@ -1,0 +1,53 @@
+/* Text actions use the same button treatment as the rest of the shop. */
+#root :is(button.link, a.link, a.books-open, a.text-link, a.invoice-share-link, button.auth-text-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 14px !important;
+  border: 1px solid var(--action-border, #ccd9c3) !important;
+  border-radius: 8px !important;
+  background: var(--action-surface, #f7f9f0) !important;
+  color: var(--action-ink, #2b523c) !important;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none !important;
+  white-space: normal;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+#root :is(button.link, a.link, a.books-open, a.text-link, a.invoice-share-link, button.auth-text-button):hover {
+  background: var(--action-hover, #eaf0df) !important;
+  border-color: var(--action-ink, #6f8d60) !important;
+}
+#root :is(.auth-card, .admin-sidebar, .about-banner) {
+  --action-surface: #ffffff0d;
+  --action-border: #87977a;
+  --action-ink: #f1f5e6;
+  --action-hover: #ffffff20;
+}
+#root :is(.customer-editor-actions, .customer-statement .book-buttons) a.books-open {
+  --action-surface: #244f3b;
+  --action-border: #244f3b;
+  --action-ink: #ffffff;
+  --action-hover: #193f2d;
+}
+#root :is(button.link, a.link).danger {
+  --action-surface: #fff7f1;
+  --action-border: #e3c5b8;
+  --action-ink: #a34735;
+  --action-hover: #fae8df;
+}
+#root :is(button.link, a.link, a.books-open, a.text-link, a.invoice-share-link):focus-visible {
+  outline: 2px solid #799569;
+  outline-offset: 3px;
+}
+#root button.link:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  #root :is(button.link, a.link, a.books-open, a.text-link, a.invoice-share-link, button.auth-text-button) { min-height: 44px; }
+}
