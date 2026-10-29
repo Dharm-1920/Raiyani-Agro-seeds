@@ -1,7 +1,9 @@
 const { CounterBill, PaymentReminder } = require('../models');
 const { normalizePhone } = require('./identity');
 const { financials, DAYS_15 } = require('./bookkeeping');
+const meta = require('./whatsapp-meta');
 function configured() {
+  if (meta.selected()) return meta.configured('reminder');
   return Boolean(/^AC[a-f0-9]{32}$/i.test(process.env.TWILIO_ACCOUNT_SID || '') && process.env.TWILIO_AUTH_TOKEN && normalizePhone((process.env.TWILIO_WHATSAPP_FROM || '').replace(/^whatsapp:/, '')) && /^HX[a-f0-9]{32}$/i.test(process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID || ''));
 }
 function reminderText(bill) {
@@ -16,6 +18,11 @@ async function sendReminder(bill) {
   const amountCents = financials(bill).balanceCents;
   const phone = normalizePhone(bill.shipping?.phone);
   if (!bill.remindersEnabled || amountCents <= 0 || !phone) return null;
+  if (meta.selected()) {
+    const providerId = await meta.sendTemplate({ kind: 'reminder', recipient: phone, language: bill.invoiceLanguage,
+      values: [bill.shipping.name, 'CS-' + String(bill._id).slice(-8).toUpperCase(), 'INR ' + (amountCents / 100).toFixed(2)] });
+    return { providerId, amountCents };
+  }
   const account = process.env.TWILIO_ACCOUNT_SID;
   const body = new URLSearchParams({ From: 'whatsapp:' + process.env.TWILIO_WHATSAPP_FROM.replace(/^whatsapp:/, ''), To: 'whatsapp:' + phone,
     ContentSid: process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID,
@@ -53,7 +60,12 @@ async function processJob(job, now = new Date()) {
     if (!result) { await PaymentReminder.updateOne(claim, { $set: { status: 'cancelled' }, $unset: { leaseUntil: 1 } }); return; }
     await PaymentReminder.updateOne(claim, { $set: { status: 'accepted', acceptedAt: now, providerId: result.providerId, amountCents: result.amountCents, lastError: '' }, $unset: { leaseUntil: 1 } });
     await advance(job, now);
-  } catch {
+  } catch (error) {
+    if (error.code === 'WHATSAPP_OPT_OUT') {
+      await PaymentReminder.updateOne(claim, { $set: { status: 'cancelled', lastError: 'WHATSAPP_OPT_OUT' }, $unset: { leaseUntil: 1 } });
+      await CounterBill.updateOne({ _id: bill._id }, { $set: { remindersEnabled: false, nextReminderAt: null } });
+      return;
+    }
     await PaymentReminder.updateOne(claim, { $set: { status: job.attempts >= 6 ? 'failed' : 'pending', lastError: 'REMINDER_RETRY', nextAttemptAt: new Date(now.valueOf() + Math.min(60, 2 ** job.attempts) * 60000) }, $unset: { leaseUntil: 1 } });
     if (job.attempts >= 6) await advance(job, now);
   }

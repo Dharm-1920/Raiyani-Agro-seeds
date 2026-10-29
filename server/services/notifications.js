@@ -18,6 +18,8 @@ async function notifyRestockedProduct(product) {
       messageGu: `${p.nameGu || p.name} ફરી ઉપલબ્ધ છે. હવે તમે ઓર્ડર કરી શકો છો.`,
       link: `/product/${p._id}`,
     });
+    // Queue before completing the subscription so a crash is repaired on the next pass.
+    if (subscription.whatsapp) await require('./restock-whatsapp').queue(subscription);
     await StockSubscription.updateOne({ _id: subscription._id, active: true }, { $set: { active: false, notifiedAt: new Date() } });
   }
 }

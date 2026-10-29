@@ -3,7 +3,9 @@ const { Order, CounterBill, User, InvoiceDelivery } = require('../models');
 const { normalizePhone, normalizeEmail, publicOrigin } = require('./identity');
 const mail = require('./mail');
 const invoice = require('./invoice');
+const meta = require('./whatsapp-meta');
 function whatsappConfigured() {
+  if (meta.selected()) return meta.configured('invoice');
   return Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_FROM && process.env.TWILIO_WHATSAPP_CONTENT_SID && (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL));
 }
 async function queueOrder(order) {
@@ -33,6 +35,10 @@ function invoicePath(delivery) {
   return `api/invoices/shared/${token}/purchase-invoice.pdf`;
 }
 async function sendWhatsApp(delivery, order) {
+  if (meta.selected()) return meta.sendTemplate({ kind: 'invoice', recipient: delivery.recipient, language: delivery.language,
+    values: [String(order._id).slice(-8).toUpperCase(), 'INR ' + Number(order.totalAmount).toFixed(2)],
+    document: { link: `${publicOrigin()}/${invoicePath(delivery)}`, filename: `Raiyani-bill-${String(order._id).slice(-8).toUpperCase()}.pdf` },
+  });
   const account = process.env.TWILIO_ACCOUNT_SID;
   if (!/^AC[a-f0-9]{32}$/i.test(account)) throw Object.assign(new Error('Invalid WhatsApp account.'), { code: 'WHATSAPP_CONFIG' });
   // Approved document template: {{1}} = order reference, {{2}} = total, {{3}} = PDF path after the fixed website domain.
@@ -95,7 +101,7 @@ async function retryPending() {
       try { await deliver(job); }
       catch (error) {
         await InvoiceDelivery.updateOne({ _id: job._id, status: 'sending', leaseUntil: job.leaseUntil }, { $set: {
-          status: job.attempts >= 6 ? 'failed' : 'pending', lastError: ['ORDER_UNAVAILABLE', 'NO_WHATSAPP_CONSENT', 'WHATSAPP_CONFIG'].includes(error.code) ? error.code : 'DELIVERY_RETRY',
+          status: error.code === 'WHATSAPP_OPT_OUT' || job.attempts >= 6 ? 'failed' : 'pending', lastError: ['ORDER_UNAVAILABLE', 'NO_WHATSAPP_CONSENT', 'WHATSAPP_CONFIG', 'WHATSAPP_OPT_OUT'].includes(error.code) ? error.code : 'DELIVERY_RETRY',
           nextAttemptAt: new Date(Date.now() + Math.min(60, 2 ** job.attempts) * 60000),
         }, $unset: { leaseUntil: 1 } });
       }

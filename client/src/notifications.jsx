@@ -58,18 +58,28 @@ export function NotificationBell() {
   return <Link className="notification-bell" to="/notifications" aria-label={`${tr('Notifications')}${unread ? ` (${unread} ${tr('unread')})` : ''}`} title={tr('Notifications')}><BellIcon />{unread > 0 && <span className="notification-count">{unread > 99 ? '99+' : unread}</span>}</Link>;
 }
 export function NotifyButton({ product }) {
-  const { subscriptions, write, error: loadError, refresh } = useNotifications();
+  const { subscriptions, write, error: loadError, refresh, whatsappRestockAvailable } = useNotifications();
+  const { user } = useAuth();
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [preferences, setPreferences] = useState(false), [whatsapp, setWhatsApp] = useState(false), [phone, setPhone] = useState(user?.phone || '');
   const subscribed = subscriptions.includes(product._id);
-  useLanguage();
+  const { language } = useLanguage();
   const toggle = async () => {
+    if (!subscribed && whatsappRestockAvailable && !preferences) { setPhone(user?.phone || ''); setPreferences(true); return; }
     setBusy(true); setError('');
-    try { await write(subscribed ? 'delete' : 'post', `/subscriptions/${product._id}`); }
-    catch (e) { setError(e.response?.status === 409 ? 'This product is already in stock. Refresh the shop to order it.' : 'Could not update your alert. Please retry.'); }
+    try { await write(subscribed ? 'delete' : 'post', `/subscriptions/${product._id}`, { language, ...(!subscribed && whatsapp ? { whatsapp: true, whatsappPhone: phone, whatsappConsent: true } : {}) }); setPreferences(false); }
+    catch (e) { setError(e.response?.data?.message || 'Could not update your alert. Please retry.'); }
     finally { setBusy(false); }
   };
   return <div className="restock-action"><span className="out">{tr('Out of stock')}</span>
     <button type="button" className={'notify-button' + (subscribed ? ' subscribed' : '')} disabled={busy || Boolean(loadError)} onClick={toggle} aria-pressed={subscribed}><BellIcon />{tr(busy ? 'Saving…' : subscribed ? 'Cancel alert' : 'Notify')}</button>
+    {preferences && !subscribed && <div className="restock-preferences">
+      <strong>{tr('Choose your stock alert')}</strong><p>{tr('You will receive a website notification when this item is available.')}</p>
+      <label><input type="checkbox" checked={whatsapp} disabled={busy} onChange={event => setWhatsApp(event.target.checked)} />{tr('Also send this product alert to my WhatsApp.')}</label>
+      {whatsapp && <label>{tr('WhatsApp number')}<input type="tel" autoComplete="tel" value={phone} placeholder="+91" disabled={busy} onChange={event => setPhone(event.target.value)} /></label>}
+      {whatsapp && <small>{tr('By saving, you agree to receive this stock alert on WhatsApp. Reply STOP to stop WhatsApp messages.')}</small>}
+      <div><button type="button" disabled={busy || whatsapp && !phone.trim()} onClick={toggle}>{tr(busy ? 'Saving…' : 'Save alert')}</button><button type="button" className="secondary" disabled={busy} onClick={() => { setPreferences(false); setError(''); }}>{tr('Cancel')}</button></div>
+    </div>}
     {subscribed && <small role="status">{tr('We’ll notify you when it’s back in stock.')}</small>}
     {error && <small className="err" role="alert">{tr(error)}</small>}
     {loadError && <button type="button" className="link" onClick={() => refresh()}>{tr('Retry alerts')}</button>}

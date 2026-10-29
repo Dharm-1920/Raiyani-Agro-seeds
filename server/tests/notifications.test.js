@@ -5,6 +5,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { Notification, StockSubscription, Product, User, Order, Message } = require('../models');
 const service = require('../services/notifications');
+const meta = require('../services/whatsapp-meta');
+const { WhatsAppPreference } = require('../models');
 const a = '000000000000000000000001', b = '000000000000000000000002';
 const admin = '000000000000000000000003', admin2 = '000000000000000000000004';
 const pid = '000000000000000000000020', oid = '000000000000000000000030';
@@ -74,6 +76,25 @@ test('guests cannot read or subscribe; stale account writes are rejected', async
   assert.equal((await request('/notifications/subscriptions/' + pid, null, 'POST')).status, 401);
   assert.equal((await request('/notifications/subscriptions/' + pid, b, 'POST', { accountId: a })).status, 403);
   assert.equal(subscriptions.length, 0);
+});
+
+test('WhatsApp restock enrollment requires configured service, explicit consent and a valid number', async () => {
+  const original = meta.configured;
+  const originalPreference = WhatsAppPreference.exists;
+  try {
+    meta.configured = () => true; WhatsAppPreference.exists = async () => false;
+    const endpoint = '/notifications/subscriptions/' + pid;
+    assert.equal((await request(endpoint, a, 'POST', { whatsapp: true, whatsappPhone: '+919876543210' })).status, 400);
+    assert.equal((await request(endpoint, a, 'POST', { whatsapp: true, whatsappPhone: 'wrong', whatsappConsent: true })).status, 400);
+    assert.equal(subscriptions.length, 0);
+    assert.equal((await request(endpoint, a, 'POST', { whatsapp: true, whatsappPhone: '9876543210', whatsappConsent: true, language: 'gu' })).status, 201);
+    assert.equal(subscriptions[0].whatsappPhone, '+919876543210'); assert.equal(subscriptions[0].language, 'gu'); assert.ok(subscriptions[0].whatsappConsentAt);
+    await request(endpoint, a, 'DELETE'); assert.equal(subscriptions[0].whatsapp, false); assert.ok(subscriptions[0].cancelledAt);
+    WhatsAppPreference.exists = async () => true;
+    assert.equal((await request(endpoint, a, 'POST', { whatsapp: true, whatsappPhone: '9876543210', whatsappConsent: true })).status, 400);
+    meta.configured = () => false; WhatsAppPreference.exists = async () => false;
+    assert.equal((await request(endpoint, a, 'POST', { whatsapp: true, whatsappPhone: '9876543210', whatsappConsent: true })).status, 400);
+  } finally { meta.configured = original; WhatsAppPreference.exists = originalPreference; }
 });
 test('subscriptions are idempotent, private and cancellable', async () => {
   await Promise.all([request('/notifications/subscriptions/' + pid, a, 'POST'), request('/notifications/subscriptions/' + pid, a, 'POST')]);

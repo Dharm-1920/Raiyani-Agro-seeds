@@ -125,6 +125,8 @@ const subscriptionSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
   active: { type: Boolean, default: true }, notifiedAt: Date,
+  whatsapp: { type: Boolean, default: false }, whatsappPhone: String, whatsappConsentAt: Date,
+  language: { type: String, enum: ['en', 'gu'], default: 'en' }, cancelledAt: Date,
 }, { timestamps: true });
 subscriptionSchema.index({ user: 1, product: 1 }, { unique: true, partialFilterExpression: { active: true } });
 const StockSubscription = mongoose.model('StockSubscription', subscriptionSchema);
@@ -159,4 +161,20 @@ const invoiceDeliverySchema = new Schema({
 invoiceDeliverySchema.index({ order: 1, channel: 1 }, { unique: true });
 invoiceDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
 const InvoiceDelivery = mongoose.model('InvoiceDelivery', invoiceDeliverySchema);
-module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery };
+const WhatsAppPreference = mongoose.model('WhatsAppPreference', new Schema({
+  phone: { type: String, required: true, unique: true }, optedOut: { type: Boolean, default: false }, optedOutAt: Date,
+}, { timestamps: true }));
+const restockDeliverySchema = new Schema({
+  subscription: { type: Schema.Types.ObjectId, ref: 'StockSubscription', required: true, unique: true },
+  product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true }, recipient: { type: String, required: true },
+  language: { type: String, enum: ['en', 'gu'], default: 'en' },
+  status: { type: String, enum: ['pending', 'sending', 'accepted', 'failed', 'cancelled'], default: 'pending' },
+  attempts: { type: Number, default: 0 }, nextAttemptAt: Date, leaseUntil: Date,
+  providerId: String, acceptedAt: Date, lastError: String,
+  deliveryStatus: String, deliveryTimestamp: Number,
+}, { timestamps: true });
+restockDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
+const RestockDelivery = mongoose.model('RestockDelivery', restockDeliverySchema);
+[InvoiceDelivery, PaymentReminder, RestockDelivery].forEach(model => model.schema.add({ deliveryStatus: String, deliveryTimestamp: Number, deliveryRank: Number }));
+module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery, WhatsAppPreference, RestockDelivery };

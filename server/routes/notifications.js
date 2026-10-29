@@ -3,6 +3,9 @@ const { isValidObjectId } = require('mongoose');
 const { protect } = require('../middleware');
 const { Notification, StockSubscription, Product, Message } = require('../models');
 const { notifyRestockedProduct, safely } = require('../services/notifications');
+const { normalizePhone } = require('../services/identity');
+const meta = require('../services/whatsapp-meta');
+const { WhatsAppPreference } = require('../models');
 router.use(protect);
 router.use((req, res, next) => {
   if (req.method !== 'GET' && req.body.accountId && String(req.body.accountId) !== String(req.user._id)) return res.status(403).json({ message: 'Your account changed. Please try again.' });
@@ -19,7 +22,7 @@ router.get('/', handle(async (req, res) => {
     req.user.role === 'admin' ? Notification.countDocuments({ user, isRead: false, type: 'purchase' }) : 0,
     req.user.role === 'admin' ? Message.countDocuments({ isRead: false }) : 0,
   ]);
-  res.set('Cache-Control', 'private, no-store').json({ items, unread, subscriptions, menuCounts: { Orders: orders, Messages: messages }, pages: Math.ceil(total / 30), page });
+  res.set('Cache-Control', 'private, no-store').json({ items, unread, subscriptions, whatsappRestockAvailable: meta.configured('restock'), menuCounts: { Orders: orders, Messages: messages }, pages: Math.ceil(total / 30), page });
 }));
 router.put('/read-purchases', handle(async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin access required' });
@@ -39,13 +42,18 @@ router.put('/:id/read', handle(async (req, res) => {
   if (!item) return res.status(404).json({ message: 'Notification not found' });
   res.json(item);
 }));
-router.post('/subscriptions/:id', handle(async (req, res) => {
+router.post('/subscriptions/:id', require('express-rate-limit')({ windowMs: 3600000, limit: 60 }), handle(async (req, res) => {
   if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid product ID' });
+  const wantsWhatsApp = req.body.whatsapp === true;
+  if (req.body.whatsapp !== undefined && typeof req.body.whatsapp !== 'boolean' || req.body.language !== undefined && !['en', 'gu'].includes(req.body.language)) return res.status(400).json({ message: 'Invalid alert preferences.' });
+  const phone = wantsWhatsApp ? normalizePhone(req.body.whatsappPhone) : null;
+  if (wantsWhatsApp && (!meta.configured('restock') || req.body.whatsappConsent !== true || !phone)) return res.status(400).json({ message: 'WhatsApp alerts need a connected service, your permission and a valid phone number.' });
+  if (wantsWhatsApp && await WhatsAppPreference.exists({ phone, optedOut: true })) return res.status(400).json({ message: 'WhatsApp messages are disabled for this number. Choose a website alert instead.' });
   const p = await Product.findOne({ _id: req.params.id, isActive: true, isDeleted: { $ne: true } });
   if (!p) return res.status(404).json({ message: 'Product not found' });
   if (p.stock > 0) return res.status(409).json({ message: 'This product is already in stock. Refresh the shop to order it.' });
   const filter = { user: req.user._id, product: p._id, active: true };
-  try { await StockSubscription.updateOne(filter, { $setOnInsert: filter }, { upsert: true }); }
+  try { await StockSubscription.updateOne(filter, { $setOnInsert: { ...filter, language: req.body.language || 'en', ...(wantsWhatsApp ? { whatsapp: true, whatsappPhone: phone, whatsappConsentAt: new Date() } : {}) } }, { upsert: true }); }
   catch (error) { if (error.code !== 11000) throw error; }
   // Covers a restock that happened between checking stock and saving the request.
   await safely(() => notifyRestockedProduct(p._id));
@@ -53,7 +61,7 @@ router.post('/subscriptions/:id', handle(async (req, res) => {
 }));
 router.delete('/subscriptions/:id', handle(async (req, res) => {
   if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid product ID' });
-  await StockSubscription.updateMany({ user: req.user._id, product: req.params.id, active: true }, { $set: { active: false } });
+  await StockSubscription.updateMany({ user: req.user._id, product: req.params.id }, { $set: { active: false, whatsapp: false, cancelledAt: new Date() } });
   res.json({ ok: true });
 }));
 module.exports = router;
