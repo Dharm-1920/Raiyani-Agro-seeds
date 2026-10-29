@@ -3,5 +3,9 @@
   "Delivery status": "મોકલવાની સ્થિતિ",
   "Paid": "ચૂકવાયેલ",
   "Payment due": "ચુકવણી બાકી",
-  "Date": "તારીખ"
+  "Date": "તારીખ",
+  "+ Add new category": "+ નવી શ્રેણી ઉમેરો",
+  "New category name": "નવી શ્રેણીનું નામ",
+  "Enter category name": "શ્રેણીનું નામ લખો",
+  "Choose an existing category or add a new one.": "હાલની શ્રેણી પસંદ કરો અથવા નવી ઉમેરો."
 }
