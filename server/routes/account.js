@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { Product, User } = require('../models');
 const { protect } = require('../middleware');
 router.use(protect);
+router.use('/addresses', require('./addresses'));
 async function expandedCart(user) {
   const lines = user.cart || [];
   const products = await Product.find({ _id: { $in: lines.map(i => i.product) }, isActive: true, isDeleted: { $ne: true } });

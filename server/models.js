@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const deliveryAddressSchema = new Schema({
+  label: String, name: String, phone: String, line1: String, line2: String,
+  landmark: String, city: String, state: String, postalCode: String,
+});
 const User = mongoose.model('User', new Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   phone: String, address: String,
+  deliveryAddresses: { type: [deliveryAddressSchema], default: undefined },
+  defaultDeliveryAddressId: String, addressBookVersion: { type: Number, default: 0 },
   phoneLogin: { type: String, unique: true, sparse: true },
   googleId: { type: String, unique: true, sparse: true },
   emailVerified: { type: Boolean, default: false },

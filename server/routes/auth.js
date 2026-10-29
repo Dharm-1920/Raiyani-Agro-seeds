@@ -103,7 +103,7 @@ router.put('/me', protect, async (req, res) => {
     if (typeof name !== 'string' || !name.trim() || name.length > 120 || typeof phone !== 'string' || phone.length > 30 || typeof address !== 'string' || address.length > 1000) return res.status(400).json({ message: 'Provide a name, phone and address within the allowed lengths.' });
     const normalized = phone.trim() ? normalizePhone(phone) : null;
     if (phone.trim() && !normalized) return res.status(400).json({ message: 'Enter a valid phone number with country code, such as +91 9876543210.' });
-    Object.assign(req.user, { name: name.trim(), phone: normalized || '', phoneLogin: normalized || undefined, address: address.trim() });
+    Object.assign(req.user, { name: name.trim(), phone: normalized || '', phoneLogin: normalized || undefined, ...(req.user.deliveryAddresses === undefined ? { address: address.trim() } : {}) });
     await req.user.save(); res.json({ user: pub(req.user) });
   } catch (error) { res.status(error.code === 11000 ? 409 : 503).json({ message: error.code === 11000 ? 'This phone number is already linked to another account.' : 'Profile could not be saved. Please try again.' }); }
 });

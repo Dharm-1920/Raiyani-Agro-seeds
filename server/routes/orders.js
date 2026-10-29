@@ -16,7 +16,16 @@ router.post('/', async (req, res) => {
   const taken = []; let saved; const reservationId = new (require('mongoose').Types.ObjectId)();
   try {
   if (req.body.accountId && String(req.body.accountId) !== String(req.user._id)) return res.status(403).json({ message: 'Your account changed. Please reload checkout.' });
-  const { items, shipping, paymentMethod } = req.body;
+  const { items, paymentMethod } = req.body;
+  let shipping = req.body.shipping;
+  if (req.body.addressId !== undefined) {
+    const { bookFor, shippingOf } = require('../services/address-book');
+    const book = bookFor(req.user);
+    if (req.body.addressBookVersion !== book.version) return res.status(409).json({ message: 'Your addresses changed. Refresh checkout and choose an address again.' });
+    const address = book.addresses.find(a => a._id === req.body.addressId);
+    if (!address) return res.status(404).json({ message: 'Address not found.' });
+    shipping = shippingOf(address);
+  }
   if (!Array.isArray(items) || !items.length) return res.status(400).json({ message: 'Cart is empty' });
   if (items.length > 100 || items.some(it => !it || !Number.isSafeInteger(Number(it.qty)) || Number(it.qty) <= 0 || Number(it.qty) > 10000)) return res.status(400).json({ message: 'Use whole-number quantities between 1 and 10000.' });
   if (!shipping || !shipping.name || !shipping.phone || !shipping.address) return res.status(400).json({ message: 'Shipping details required' });

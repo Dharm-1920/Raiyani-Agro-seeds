@@ -1,3 +1,4 @@
+import AddressBook from './address-book.jsx';
 import { WhyChooseUs, ShopDetails, FAQs, WixIntroduction, ProductIntroduction } from './business.jsx';
 import { tr, productText, useLanguage } from "./language.jsx";
 import { useEffect, useState } from 'react';
@@ -168,8 +169,7 @@ export function Checkout() {
   const location = useLocation();
   const [invoiceWhatsApp, setInvoiceWhatsApp] = useState(false);
   const {
-      user,
-      updateProfile
+      user
     } = useAuth(),
     {
       items: cartItems,
@@ -184,12 +184,8 @@ export function Checkout() {
   const directPurchase = purchase && !invalidPurchase ? purchase.item : null;
   const items = directPurchase ? [directPurchase] : cartItems;
   const total = directPurchase ? directPurchase.price * directPurchase.qty : cartTotal;
-  const [saveAddress, setSaveAddress] = useState(true);
-  const [shipping, setShipping] = useState({
-    name: user.name,
-    phone: user.phone || '',
-    address: user.address || ''
-  });
+  const [delivery, setDelivery] = useState(null);
+  const shipping = delivery ? { name: delivery.name, phone: delivery.phone, address: delivery.address } : { name: '', phone: '', address: '' };
   const [method, setMethod] = useState('cod'),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -208,7 +204,7 @@ export function Checkout() {
     let created;
     try {
       if (!directPurchase) await flush();
-      if (saveAddress) await updateProfile(shipping);
+      if (!delivery) throw Error('Choose a delivery address before placing your order.');
       const {
         data
       } = await api.post('/orders', {
@@ -218,6 +214,8 @@ export function Checkout() {
           qty: i.qty
         })),
         shipping,
+        addressId: delivery._id,
+        addressBookVersion: delivery.version,
         paymentMethod: method,
         invoiceWhatsApp,
         invoiceLanguage: language
@@ -248,16 +246,7 @@ export function Checkout() {
   if (invalidPurchase) return <p className="center" role="alert">{tr('Choose this product again to continue with your current account.')} <Link to="/shop">{tr('Browse products')}</Link></p>;
   if (!directPurchase && !cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
   if (!items.length) return <p className="center">{tr("Your cart is empty. ")}<Link to="/shop">{tr("Browse products")}</Link></p>;
-  return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><section className="checkout-items" aria-label={tr('Order summary')}>{items.map(item => <div className="checkout-item" key={item.id}><span>{productText(item)} × {tr(item.qty)}</span><b>{tr(rs(item.price * item.qty))}</b></div>)}{directPurchase && <p className="muted">{tr('Your saved cart stays unchanged.')}</p>}</section><label>{tr("Name")}<input required autoComplete="name" value={shipping.name} onChange={e => setShipping({
-        ...shipping,
-        name: e.target.value
-      })} /></label><label>{tr("Phone")}<input required type="tel" autoComplete="tel" inputMode="tel" maxLength={30} pattern="[0-9+ ]{8,30}" value={shipping.phone} onChange={e => setShipping({
-        ...shipping,
-        phone: e.target.value
-      })} /></label><label>{tr("Delivery address")}<textarea required autoComplete="street-address" rows="3" value={shipping.address} onChange={e => setShipping({
-        ...shipping,
-        address: e.target.value
-      })} /></label><label className="save-address"><input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} />{tr(" Save these delivery details to my account")}</label><InvoicePreferences user={user} phone={shipping.phone} whatsapp={invoiceWhatsApp} setWhatsapp={setInvoiceWhatsApp} /><h3>{tr("Choose payment")}</h3><div className="payment-choices"><label className={method === 'cod' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>{tr("Cash on Delivery")}</b><small>{tr("Pay when your order arrives")}</small></span></label><label className={method === 'upi' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'upi'} disabled={!options?.upi} onChange={() => setMethod('upi')} /><span><b>{tr("UPI QR payment")}</b><small>{tr("Scan and pay with your UPI app")}</small></span></label></div>{tr(!options ? <p className="muted">{tr("Checking payment options\u2026")}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null)}<div className="checkout-total"><span>{tr("Items ")}{tr(rs(total))}{tr(" + shipping ")}{tr(rs(fee))}</span><b>{tr(rs(total + fee))}</b></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order')}</button></form>;
+  return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><section className="checkout-items" aria-label={tr('Order summary')}>{items.map(item => <div className="checkout-item" key={item.id}><span>{productText(item)} × {tr(item.qty)}</span><b>{tr(rs(item.price * item.qty))}</b></div>)}{directPurchase && <p className="muted">{tr('Your saved cart stays unchanged.')}</p>}</section><AddressBook checkout onSelect={setDelivery} /><InvoicePreferences user={user} phone={shipping.phone} whatsapp={invoiceWhatsApp} setWhatsapp={setInvoiceWhatsApp} /><h3>{tr("Choose payment")}</h3><div className="payment-choices"><label className={method === 'cod' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>{tr("Cash on Delivery")}</b><small>{tr("Pay when your order arrives")}</small></span></label><label className={method === 'upi' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'upi'} disabled={!options?.upi} onChange={() => setMethod('upi')} /><span><b>{tr("UPI QR payment")}</b><small>{tr("Scan and pay with your UPI app")}</small></span></label></div>{tr(!options ? <p className="muted">{tr("Checking payment options\u2026")}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null)}<div className="checkout-total"><span>{tr("Items ")}{tr(rs(total))}{tr(" + shipping ")}{tr(rs(fee))}</span><b>{tr(rs(total + fee))}</b></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy || !delivery}>{tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order')}</button></form>;
 }
 export function MyOrders() {
   const loc = useLocation();
