@@ -31,8 +31,12 @@ Optional invoice shop details in `server/.env`:
 
 ```dotenv
 SHOP_NAME=Raiyani Agro Seeds
-SHOP_ADDRESS=Gondal, Gujarat
+SHOP_ADDRESS=Shop No 2, New Marketing Yard, Gondal, Gujarat 360311, India
+SHOP_PHONE=+91 97146 23500
+SHOP_EMAIL=raiyaniagroseeds.support@gmail.com
 ```
+
+The invoice uses a green item-table header, alternating row backgrounds and a highlighted total. The shop address, phone and email appear in the header on every page. Existing environment values override the defaults; update an older abbreviated SHOP_ADDRESS if you want the full address shown.
 
 The internal invoice ID is based on the existing order ID. Payment/status details reflect the current saved order when downloaded.
 

@@ -9,6 +9,10 @@ import { Brand, LanguageSelector } from './language.jsx';
 import { SHOP } from './config';
 import InvoiceButton from './invoice.jsx';
 import PaymentStatus from './payment-status.jsx';
+import CounterBills from './counter-bills.jsx';
+import Bookkeeping from './bookkeeping.jsx';
+import AccountBook from './account-book.jsx';
+import CounterCustomers from './counter-customers.jsx';
 import { refundText } from './payment.jsx';
 import './admin.css';
 import { NotificationBell, useNotifications } from './notifications.jsx';
@@ -349,6 +353,10 @@ const TABS = {
   Dashboard,
   Products,
   Orders,
+  'Counter bills': CounterBills,
+  Bookkeeping,
+  'Account book': AccountBook,
+  'Counter customers': CounterCustomers,
   Users,
   Messages
 };
@@ -356,6 +364,10 @@ const icons = {
   Dashboard: 'sun',
   Products: 'leaf',
   Orders: 'bag',
+  'Counter bills': 'bag',
+  Bookkeeping: 'menu',
+  'Account book': 'menu',
+  'Counter customers': 'user',
   Users: 'user',
   Messages: 'menu'
 };
@@ -363,6 +375,10 @@ const descriptions = {
   Dashboard: 'A clear view of your shop, from stock to sales.',
   Products: 'Your seeds, farm essentials and inventory.',
   Orders: 'Follow each order from checkout to delivery.',
+  'Counter bills': 'Make, print and share bills for customers at your shop.',
+  Bookkeeping: 'Counter sales, customer dues, receipts and shop expenses.',
+  'Account book': 'Day book, account ledgers, opening balances and accounting entries.',
+  'Counter customers': 'Saved customer details and individual customer statements.',
   Users: 'Manage customer accounts and store access.',
   Messages: 'Keep in touch with the people who grow with you.'
 };
@@ -380,6 +396,10 @@ export default function Admin() {
     nav = useNavigate(),
     View = TABS[tab];
   useEffect(() => { if (TABS[requestedTab]) setTab(requestedTab); }, [requestedTab]);
+  const openTab = value => {
+    setTab(value);
+    nav('/admin?tab=' + encodeURIComponent(value));
+  };
   const leave = async () => {
     try {
       await logout();
@@ -388,5 +408,5 @@ export default function Admin() {
       setError(errMsg(e));
     }
   };
-  return <div className="admin-shell"><aside className="admin-sidebar"><Link to="/" className="admin-logo"><Brand /></Link><span className="sidebar-label">{tr("WORKSPACE")}</span><nav aria-label={tr("Admin sections")}>{tr(Object.keys(TABS).map(t => <button key={t} className={tab === t ? 'active' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}><Icon name={icons[t]} size={19} /><span>{tr(t)}</span>{menuCounts[t] > 0 && <span className="admin-unread-count" aria-label={`${menuCounts[t]} ${tr("unread")}`}>{menuCounts[t] > 99 ? "99+" : menuCounts[t]}</span>}</button>))}</nav><div className="sidebar-bottom"><Link to="/"><Icon name="arrow" size={18} />{tr(" View storefront")}</Link><button onClick={leave}>{tr("Sign out")}</button></div></aside><div className="admin-workspace"><header className="admin-topbar"><LanguageSelector /><span>{tr("Raiyani Agro Seeds ")}<small>{tr("/ Admin panel")}</small></span><NotificationBell /><span className="admin-profile"><i>{tr(user.name.charAt(0).toUpperCase())}</i><span>{user.name}<small>{tr("Administrator")}</small></span></span></header><div className="admin-content"><div className="admin-title"><div><span className="eyebrow">{tr("YOUR SHOP AT A GLANCE")}</span><h1>{tr(tab)}</h1><p>{tr(descriptions[tab])}</p></div><button className="secondary" onClick={() => setRefresh(n => n + 1)}>{tr("Refresh data")}</button></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<View key={tab + refresh} open={setTab} /><p className="admin-bottom-note">{tr(SHOP.name)} · {tr(SHOP.city)}</p></div></div></div>;
+  return <div className="admin-shell"><aside className="admin-sidebar"><Link to="/" className="admin-logo"><Brand /></Link><span className="sidebar-label">{tr("WORKSPACE")}</span><nav aria-label={tr("Admin sections")}>{tr(Object.keys(TABS).map(t => <button key={t} className={tab === t ? 'active' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => openTab(t)}><Icon name={icons[t]} size={19} /><span>{tr(t)}</span>{menuCounts[t] > 0 && <span className="admin-unread-count" aria-label={`${menuCounts[t]} ${tr("unread")}`}>{menuCounts[t] > 99 ? "99+" : menuCounts[t]}</span>}</button>))}</nav><div className="sidebar-bottom"><Link to="/"><Icon name="arrow" size={18} />{tr(" View storefront")}</Link><button onClick={leave}>{tr("Sign out")}</button></div></aside><div className="admin-workspace"><header className="admin-topbar"><LanguageSelector /><span>{tr("Raiyani Agro Seeds ")}<small>{tr("/ Admin panel")}</small></span><NotificationBell /><span className="admin-profile"><i>{tr(user.name.charAt(0).toUpperCase())}</i><span>{user.name}<small>{tr("Administrator")}</small></span></span></header><div className="admin-content"><div className="admin-title"><div><span className="eyebrow">{tr("YOUR SHOP AT A GLANCE")}</span><h1>{tr(tab)}</h1><p>{tr(descriptions[tab])}</p></div><button className="secondary" onClick={() => setRefresh(n => n + 1)}>{tr("Refresh data")}</button></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<View key={tab + refresh} open={openTab} /><p className="admin-bottom-note">{tr(SHOP.name)} · {tr(SHOP.city)}</p></div></div></div>;
 }

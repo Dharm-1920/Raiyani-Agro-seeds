@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const { Message, User, AuthToken, InvoiceDelivery } = require('./models');
+const { Message, User, AuthToken, InvoiceDelivery, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder } = require('./models');
 if (!process.env.JWT_SECRET) { console.error('JWT_SECRET missing in .env'); process.exit(1); }
 const app = express();
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
@@ -29,6 +29,10 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/invoices', rateLimit({ windowMs: 60000, limit: 30 }), require('./routes/invoice-links'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin/counter-bills', require('./routes/counter-bills'));
+app.use('/api/admin/bookkeeping', require('./routes/bookkeeping'));
+app.use('/api/admin/counter-customers', require('./routes/counter-customers'));
+app.use('/api/admin/account-book', require('./routes/account-book'));
 app.post('/api/contact', require('./middleware').protect, rateLimit({ windowMs: 60 * 60 * 1000, limit: 10 }), async (req, res) => {
   const { name, email, message } = req.body;
   if (!name || !email || !message) return res.status(400).json({ message: 'All fields required' });
@@ -40,8 +44,9 @@ app.use((req, res) => res.status(404).json({ message: 'Not found' }));
 app.use((err, req, res, next) => { console.error(err); res.status(err.status || 500).json({ message: err.message || 'Server error' }); });
 process.on('unhandledRejection', (e) => console.error(e));
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  await Promise.all([User.init(), AuthToken.init(), InvoiceDelivery.init()]);
+  await Promise.all([User.init(), AuthToken.init(), InvoiceDelivery.init(), CounterBill.init(), CounterCustomer.init(), Expense.init(), JournalEntry.init(), PaymentReminder.init()]);
   require('./services/notifications').startNotificationWorker();
   require('./services/invoice-delivery').startWorker();
+  require('./services/payment-reminders').startWorker();
   app.listen(process.env.PORT || 5000, () => console.log('API on port ' + (process.env.PORT || 5000)));
 }).catch((e) => { console.error('Mongo connection failed', e.message); process.exit(1); });

@@ -52,6 +52,61 @@ const Order = mongoose.model('Order', new Schema({
   invoicePhone: String,
   refundStatus: { type: String, enum: ['none', 'pending_review', 'completed'], default: 'none' },
 }, { timestamps: true }));
+// Walk-in bills are separate from website orders and never create a customer login.
+const counterCustomerSchema = new Schema({
+  name: { type: String, required: true, trim: true },
+  phone: { type: String, unique: true, sparse: true }, address: { type: String, default: '' },
+  preferredLanguage: { type: String, enum: ['en', 'gu'], default: 'en' },
+  requestKey: { type: String, required: true, unique: true }, requestHash: { type: String, required: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
+const CounterCustomer = mongoose.model('CounterCustomer', counterCustomerSchema);
+const CounterBill = mongoose.model('CounterBill', new Schema({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  requestKey: { type: String, required: true, unique: true },
+  requestHash: { type: String, required: true },
+  source: { type: String, default: 'counter', enum: ['counter'] },
+  counterCustomer: { type: Schema.Types.ObjectId, ref: 'CounterCustomer', index: true },
+  shipping: { name: String, phone: String, address: String },
+  items: [{ name: String, nameGu: String, unit: String, price: Number, qty: Number }],
+  itemsTotal: Number, shippingFee: { type: Number, default: 0 }, discount: Number, totalAmount: Number,
+  paymentMethod: { type: String, enum: ['cash', 'upi', 'card', 'later'], required: true },
+  paymentStatus: { type: String, enum: ['pending', 'partial', 'paid'], required: true },
+  paidCents: { type: Number, min: 0 },
+  payments: [{ requestKey: String, amountCents: Number, method: { type: String, enum: ['cash', 'upi', 'card'] }, receivedAt: Date, enteredBy: { type: Schema.Types.ObjectId, ref: 'User' }, note: String }],
+  remindersEnabled: { type: Boolean, default: false },
+  nextReminderAt: Date,
+  orderStatus: { type: String, default: 'delivered' },
+  invoiceLanguage: { type: String, enum: ['en', 'gu'], default: 'en' },
+  invoicePhone: String, invoiceWhatsApp: { type: Boolean, default: false },
+  invoiceNoticePending: { type: Boolean, default: false },
+}, { timestamps: true }));
+const expenseSchema = new Schema({
+  requestKey: { type: String, required: true, unique: true }, requestHash: String,
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  description: { type: String, required: true }, category: String, payee: String,
+  amountCents: { type: Number, required: true, min: 1 },
+  method: { type: String, enum: ['cash', 'upi'], required: true }, occurredAt: { type: Date, required: true },
+}, { timestamps: true });
+const Expense = mongoose.model('Expense', expenseSchema);
+const JournalEntry = mongoose.model('JournalEntry', new Schema({
+  requestKey: { type: String, required: true, unique: true }, requestHash: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  occurredAt: { type: Date, required: true }, description: { type: String, required: true },
+  debitAccount: { type: String, required: true }, creditAccount: { type: String, required: true },
+  amountCents: { type: Number, required: true, min: 1 },
+}, { timestamps: true }));
+const reminderSchema = new Schema({
+  bill: { type: Schema.Types.ObjectId, ref: 'CounterBill', required: true },
+  scheduledFor: { type: Date, required: true },
+  status: { type: String, enum: ['pending', 'sending', 'accepted', 'cancelled', 'failed'], default: 'pending' },
+  attempts: { type: Number, default: 0 }, nextAttemptAt: { type: Date, default: Date.now },
+  leaseUntil: Date, acceptedAt: Date, providerId: String, lastError: String, amountCents: Number,
+}, { timestamps: true });
+reminderSchema.index({ bill: 1, scheduledFor: 1 }, { unique: true });
+reminderSchema.index({ status: 1, nextAttemptAt: 1 });
+const PaymentReminder = mongoose.model('PaymentReminder', reminderSchema);
 const Message = mongoose.model('Message', new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   name: String, email: String, message: String, isRead: { type: Boolean, default: false },
@@ -88,6 +143,7 @@ authTokenSchema.index({ user: 1, purpose: 1 }, { unique: true });
 authTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 const AuthToken = mongoose.model('AuthToken', authTokenSchema);
 const invoiceDeliverySchema = new Schema({
+  source: { type: String, enum: ['order', 'counter'], default: 'order' },
   order: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   channel: { type: String, enum: ['email', 'whatsapp'], required: true },
@@ -103,4 +159,4 @@ const invoiceDeliverySchema = new Schema({
 invoiceDeliverySchema.index({ order: 1, channel: 1 }, { unique: true });
 invoiceDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
 const InvoiceDelivery = mongoose.model('InvoiceDelivery', invoiceDeliverySchema);
-module.exports = { User, Product, Order, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery };
+module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery };

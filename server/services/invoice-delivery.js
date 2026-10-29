@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Order, User, InvoiceDelivery } = require('../models');
+const { Order, CounterBill, User, InvoiceDelivery } = require('../models');
 const { normalizePhone, normalizeEmail, publicOrigin } = require('./identity');
 const mail = require('./mail');
 const invoice = require('./invoice');
@@ -16,6 +16,17 @@ async function queueOrder(order) {
     catch (error) { if (error.code !== 11000) throw error; }
   }
   await Order.updateOne({ _id: order._id }, { $set: { invoiceNoticePending: false } });
+}
+async function queueCounterBill(bill) {
+  if (bill.invoiceWhatsApp && normalizePhone(bill.invoicePhone)) {
+    try {
+      await InvoiceDelivery.updateOne({ order: bill._id, channel: 'whatsapp' }, { $setOnInsert: {
+        order: bill._id, source: 'counter', user: bill.user, language: bill.invoiceLanguage,
+        channel: 'whatsapp', recipient: bill.invoicePhone, status: 'pending', attempts: 0, nextAttemptAt: new Date(),
+      } }, { upsert: true });
+    } catch (error) { if (error.code !== 11000) throw error; }
+  }
+  await CounterBill.updateOne({ _id: bill._id }, { $set: { invoiceNoticePending: false } });
 }
 function invoicePath(delivery) {
   const token = jwt.sign({ purpose: 'invoice-delivery', deliveryId: String(delivery._id), orderId: String(delivery.order) }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' });
@@ -41,9 +52,10 @@ async function sendWhatsApp(delivery, order) {
   return result.sid;
 }
 async function deliver(job) {
-  const order = await Order.findById(job.order).populate('user', 'name email');
+  const order = job.source === 'counter' ? await CounterBill.findById(job.order) : await Order.findById(job.order).populate('user', 'name email');
   if (!order || String(order.user?._id || order.user) !== String(job.user)) throw Object.assign(new Error('Order is unavailable.'), { code: 'ORDER_UNAVAILABLE' });
   if (job.channel === 'email') {
+    if (job.source === 'counter') throw Object.assign(new Error('Counter bills use WhatsApp.'), { code: 'ORDER_UNAVAILABLE' });
     const user = await User.findById(job.user);
     if (!user || !user.emailVerified || user.email !== job.recipient) {
       await InvoiceDelivery.updateOne({ _id: job._id, status: 'sending', leaseUntil: job.leaseUntil }, { $set: { status: 'pending', lastError: 'VERIFY_EMAIL', nextAttemptAt: new Date(Date.now() + 15 * 60000) }, $unset: { leaseUntil: 1 }, $inc: { attempts: -1 } });
@@ -70,6 +82,8 @@ async function retryPending() {
     await InvoiceDelivery.updateMany({ status: 'sending', attempts: { $gte: 6 }, leaseUntil: { $lte: new Date() } }, { $set: { status: 'failed', lastError: 'DELIVERY_RETRY' }, $unset: { leaseUntil: 1 } });
     const orders = await Order.find({ invoiceNoticePending: true }).limit(25);
     for (const order of orders) await queueOrder(order);
+    const bills = await CounterBill.find({ invoiceNoticePending: true }).limit(25);
+    for (const bill of bills) await queueCounterBill(bill);
     const channels = [...(mail.configured() ? ['email'] : []), ...(whatsappConfigured() ? ['whatsapp'] : [])];
     if (!channels.length) return;
     for (let count = 0; count < 10; count++) {
@@ -92,4 +106,4 @@ function startWorker() {
   const run = () => retryPending().catch(() => console.error('Invoice delivery will retry.'));
   run(); const timer = setInterval(run, 15000); timer.unref(); return timer;
 }
-module.exports = { whatsappConfigured, queueOrder, invoicePath, sendWhatsApp, deliver, retryPending, startWorker };
+module.exports = { whatsappConfigured, queueOrder, queueCounterBill, invoicePath, sendWhatsApp, deliver, retryPending, startWorker };

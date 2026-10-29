@@ -1,12 +1,12 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express'), jwt = require('jsonwebtoken');
-const { Order, User, InvoiceDelivery } = require('../models');
+const { Order, CounterBill, User, InvoiceDelivery } = require('../models');
 const service = require('../services/invoice-delivery');
 const mail = require('../services/mail');
 const invoice = require('../services/invoice');
 const oid = '000000000000000000000001', uid = '000000000000000000000002';
-let order, user, jobs, sent, transport, server, base;
+let order, user, jobs, sent, transport, server, base, counterBill;
 const realFetch = global.fetch;
 function matches(document, query) {
   return Object.entries(query).every(([key, value]) => {
@@ -36,6 +36,9 @@ InvoiceDelivery.findOneAndUpdate = async (q, changes) => { const job = jobs.find
 InvoiceDelivery.findOne = async q => jobs.find(job => matches(job, q)) || null;
 Order.updateOne = async (q, changes) => { if (matches(order, q)) update(order, changes); };
 Order.find = q => ({ limit: async () => matches(order, q) ? [order] : [] });
+CounterBill.find = () => ({ limit: async () => counterBill?.invoiceNoticePending ? [counterBill] : [] });
+CounterBill.findById = async id => counterBill && String(id) === String(counterBill._id) ? counterBill : null;
+CounterBill.updateOne = async (query, changes) => { if (counterBill && matches(counterBill, query)) update(counterBill, changes); };
 Order.findById = id => ({ populate: async () => String(id) === oid ? { ...order, user: { ...user } } : null });
 User.findById = async id => String(id) === uid ? user : null;
 mail.send = async message => { sent.push(message); if (transport === 'fail') throw Error('provider outage'); return 'mail-provider-id'; };
@@ -47,6 +50,7 @@ before(async () => {
 after(() => { global.fetch = realFetch; server.close(); });
 beforeEach(() => {
   jobs = []; sent = []; transport = 'success'; global.fetch = realFetch;
+  counterBill = null;
   user = { _id: uid, name: 'Farmer', email: 'farmer@example.com', emailVerified: true };
   order = { _id: oid, user: uid, createdAt: new Date(), invoiceNoticePending: true, invoiceEmail: user.email, invoicePhone: '+919876543210', invoiceWhatsApp: false, invoiceLanguage: 'en', items: [{ name: 'Seeds', price: 100, qty: 2 }], itemsTotal: 200, shippingFee: 40, totalAmount: 240, shipping: { name: 'Farmer', phone: '+919876543210', address: 'Gondal' }, paymentMethod: 'cod', paymentStatus: 'pending', orderStatus: 'confirmed' };
   process.env.BREVO_API_KEY = 'test-key'; process.env.MAIL_FROM = 'shop@example.com';
@@ -113,4 +117,26 @@ test('invoice generator failures stay out of the sender and are retryable', asyn
   const createInvoice = invoice.createInvoice; invoice.createInvoice = async () => { throw Error('PDF unavailable'); };
   try { await service.retryPending(); assert.equal(sent.length, 0); assert.equal(jobs[0].status, 'pending'); }
   finally { invoice.createInvoice = createInvoice; }
+});
+test('counter bill WhatsApp jobs use the walk-in phone and secure PDF without a customer account', async () => {
+  counterBill = { ...order, _id: '000000000000000000000050', source: 'counter', invoiceWhatsApp: true, invoiceEmail: undefined, paymentMethod: 'cash', shippingFee: 0, user: uid };
+  await service.queueCounterBill(counterBill); await service.queueCounterBill(counterBill);
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].source, 'counter'); assert.equal(jobs[0].recipient, '+919876543210');
+  const job = jobs[0], path = '/' + service.invoicePath(job);
+  const pdf = await realFetch(base + path);
+  assert.equal(pdf.status, 200); assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0, 5).toString(), '%PDF-');
+  process.env.TWILIO_ACCOUNT_SID = 'AC' + 'a'.repeat(32); process.env.TWILIO_AUTH_TOKEN = 'test-token'; process.env.TWILIO_WHATSAPP_FROM = '+14155550123'; process.env.TWILIO_WHATSAPP_CONTENT_SID = 'HX' + 'b'.repeat(32);
+  global.fetch = async (url, options) => { assert.equal(options.body.get('To'), 'whatsapp:+919876543210'); return { ok: true, json: async () => ({ sid: 'SM-counter' }) }; };
+  Object.assign(job, { status: 'sending', leaseUntil: new Date(), attempts: 1 });
+  await service.deliver({ ...job }); assert.equal(job.status, 'accepted');
+  job.recipient = '+919999999999'; assert.equal((await realFetch(base + path)).status, 404);
+  job.recipient = counterBill.invoicePhone; counterBill.invoiceWhatsApp = false;
+  assert.equal((await realFetch(base + path)).status, 404);
+});
+test('worker recovers a counter bill whose WhatsApp job was not queued at checkout', async () => {
+  order.invoiceNoticePending = false;
+  counterBill = { ...order, _id: '000000000000000000000051', source: 'counter', invoiceWhatsApp: true, invoiceNoticePending: true, invoiceEmail: undefined };
+  await service.retryPending();
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].source, 'counter');
+  assert.equal(counterBill.invoiceNoticePending, false); assert.equal(jobs[0].attempts, 0);
 });

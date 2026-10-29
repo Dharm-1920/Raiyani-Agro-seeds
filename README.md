@@ -37,6 +37,9 @@ Preserve your current `server/.env`, product uploads and MongoDB data when copyi
 
 ## Features
 
+- Admin counter bills: walk-in customer details, manual item prices and quantities, discounts, saved bill history, English/Gujarati PDFs, physical printing and WhatsApp sharing. See [counter billing setup](COUNTER_BILLING_SETUP.md).
+- Pay later and bookkeeping: credit bills, partial/full receipts, customer dues, every-15-day WhatsApp reminders, paid expenses and a journal/CSV export. See [pay later and bookkeeping](PAY_LATER_AND_BOOKKEEPING.md).
+- Saved counter customers and account book: reuse customer details across visits, individual customer statements, a dated day book, account ledgers with opening/running balances and manual accounting entries. See [saved customers and account book](CUSTOMERS_AND_ACCOUNT_BOOK.md).
 - Customers: account registration/login, product search/filter/sort, persisted cart, saved profile and delivery details, COD/UPI QR checkout, owned orders and invoices, cancellation before shipping.
 - Admin: product add/edit/hide/remove, customers/messages, dashboard, order status, bank payment confirmation, cancellation and completed refund records.
 - Backend: password hashing, cookie-based authentication, role/ownership checks, server price calculation, atomic stock reservations and retry-safe cancellation.
@@ -45,7 +48,7 @@ Preserve your current `server/.env`, product uploads and MongoDB data when copyi
 
 See **UI_EDIT_GUIDE.md** for UI files and **ADMIN_SETUP.md** for admin access. APIs: `/api/auth/*`, `/api/account/cart`, `/api/products`, `/api/orders`, `/api/payments/options`, `/api/admin/*`, `/api/contact`.
 
-`npm test` in server runs 85 backend tests. `npm run build` in client builds the frontend. Mocked browser checks cover login-first access, account isolation, QR/reference submission, COD checkout, account recovery, invoice consent and admin management. Actual MongoDB/bank transactions and messaging providers require end-to-end verification with accounts you control.
+`npm test` in server runs 134 backend tests. `npm run build` in client builds the frontend. Mocked browser checks cover login-first access, account isolation, QR/reference submission, COD checkout, account recovery, invoice consent, counter billing and admin management. Actual MongoDB/bank transactions and messaging providers require end-to-end verification with accounts you control.
 
 ## Login and invoice delivery
 
