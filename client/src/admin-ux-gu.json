@@ -5,6 +5,9 @@
   "Payment due": "ચુકવણી બાકી",
   "Date": "તારીખ",
   "+ Add new category": "+ નવી શ્રેણી ઉમેરો",
+  "Add new category": "નવી શ્રેણી ઉમેરો",
+  "Search categories": "શ્રેણી શોધો",
+  "No matching categories": "મેળ ખાતી શ્રેણી મળી નથી",
   "New category name": "નવી શ્રેણીનું નામ",
   "Enter category name": "શ્રેણીનું નામ લખો",
   "Choose an existing category or add a new one.": "હાલની શ્રેણી પસંદ કરો અથવા નવી ઉમેરો."

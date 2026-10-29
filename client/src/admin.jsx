@@ -1,4 +1,5 @@
 import AdminTable from './admin-table';
+import CategoryPicker from './category-picker.jsx';
 import { tr, productText } from "./language.jsx";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
@@ -221,15 +222,7 @@ function Products() {
     })} /></label>;
   const categoryOptions = [...new Set(['Seeds', 'Fertilizers', 'Pesticides', 'Tools', ...(resource.data.categories || []), ...resource.data.items.map(p => p.category)].filter(Boolean))];
   const changeCategory = value => setForm(current => ({ ...current, category: value, categoryGu: '' }));
-  const categoryField = <div className="product-category-field">
-    <label htmlFor="product-category">{tr('Category')}</label>
-    <select id="product-category" value={categoryOptions.includes(form.category) ? form.category : '__new_category__'} onChange={e => changeCategory(e.target.value === '__new_category__' ? '' : e.target.value)} aria-describedby="product-category-help">
-      {categoryOptions.map(category => <option key={category} value={category}>{tr(category)}</option>)}
-      <option value="__new_category__">{tr('+ Add new category')}</option>
-    </select>
-    {!categoryOptions.includes(form.category) && <label htmlFor="product-category-new">{tr('New category name')}<input id="product-category-new" required maxLength={100} value={form.category} placeholder={tr('Enter category name')} onChange={e => changeCategory(e.target.value)} /></label>}
-    <small id="product-category-help">{tr('Choose an existing category or add a new one.')}</small>
-  </div>;
+  const categoryField = <CategoryPicker key={editId || 'new'} value={form.category} options={categoryOptions} onChange={changeCategory} disabled={busy} />;
   const list = resource.data.items.filter(p => `${p.name} ${p.nameGu || ""} ${p.category} ${p.categoryGu || ""}`.toLowerCase().includes(search.toLowerCase()));
   return <><form ref={formRef} className="admin-panel product-editor" onSubmit={save}><div className="admin-section-title"><h3>{tr(editId ? 'Edit product' : 'Add a product')}</h3><span className="mini-badge">{tr("Inventory")}</span></div><fieldset disabled={busy}><div className="formgrid">{tr(input('name', 'Product name'))}{categoryField}{tr(input('unit', 'Unit / pack size'))}{tr(input('price', 'Selling price (₹)', 'number'))}{tr(input('mrp', 'MRP (₹)', 'number', false))}{tr(input('stock', 'Stock quantity', 'number'))}</div><label>{tr("Description")}<textarea rows="3" value={form.description} onChange={e => setForm({
             ...form,
