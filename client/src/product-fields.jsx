@@ -19,6 +19,7 @@ export default function ProductFields({ form, setForm, categoryField }) {
     <small id={`product-${key}-help`}>{tr(help)}</small>
   </div>;
   return <div className="product-fields">
+    <div className="product-auto-translation"><span><Icon name="check" size={20} /></span><div><strong>{tr('Automatic Gujarati translation')}</strong><p>{tr('Enter product details in English. We translate the name, description, category and pack size when you save. Customers see Gujarati automatically when they choose Gujarati.')}</p></div></div>
     <section className="product-form-section" aria-labelledby="product-information-title">
       <div className="product-form-section-head"><span><Icon name="leaf" size={21} /></span><div><h4 id="product-information-title">{tr('Product information')}</h4><p>{tr('Name, category and pack size for your shop.')}</p></div></div>
       <div className="product-fields-grid">

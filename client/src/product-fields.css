@@ -1,4 +1,5 @@
 .admin-main .product-fields{display:grid;gap:20px;margin-bottom:24px}
+.product-auto-translation{display:flex;align-items:flex-start;gap:12px;padding:15px 18px;background:#edf5e7;border:1px solid #d8e6cd;border-radius:12px;color:#3b6040}.product-auto-translation>span{display:grid;place-items:center;flex:0 0 28px;height:28px;background:#dcebd3;border-radius:50%}.product-auto-translation strong{font-size:13px;font-weight:600}.admin-main .product-auto-translation p{margin:4px 0 0;font-size:12px;line-height:1.7;color:#69805e}
 .admin-main .product-form-section{border:1px solid #e0e7d9;border-radius:14px;padding:22px;background:linear-gradient(130deg,#fcfdf9,#fff)}
 .product-form-section-head{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .product-form-section-head>span{display:grid;place-items:center;flex:0 0 40px;height:40px;background:#edf3e5;border:1px solid #e0e9d7;border-radius:11px;color:#507148}
