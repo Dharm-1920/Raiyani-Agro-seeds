@@ -17,6 +17,7 @@ import './auth.css';
 import './purchase.css';
 import './mobile.css';
 import './action-buttons.css';
+import './admin-ux.css';
 createRoot(document.getElementById('root')).render(
   <ErrorBoundary><BrowserRouter><Providers><NotificationProvider><App /></NotificationProvider></Providers></BrowserRouter></ErrorBoundary>
 );

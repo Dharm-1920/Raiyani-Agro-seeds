@@ -1,5 +1,6 @@
 export default function Icon({ name = 'leaf', size = 22, ...props }) {
   const paths = {
+    download: <><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 16v5h14v-5"/></>,
     phone: <><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 17h12M10 5h4M11 20h2"/></>,
     mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></>,
     eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
