@@ -41,7 +41,7 @@ The journal is derived from the saved sale, embedded receipt history and expense
 
 Date filters include entire days in **Asia/Kolkata**. Sales, receipts, expenses and account movements use the selected period. Customer dues always show current outstanding balances across all dates, including earlier unpaid bills. Use **Record payment / open bill** to return to the correct bill. Export the complete filtered journal as CSV; exports include all matching rows, not just the visible page. Spreadsheet formula-like text is neutralized.
 
-**Receipts less expenses** is cash movement from these recorded transactions. This feature does not calculate profit, opening bank balances, inventory purchase costs, stock valuation, GST, bank settlement or tax returns. Card receipts are held in **Card clearing** because a recorded card payment does not prove bank settlement. Catalogue stock is still separate from counter bills.
+**Receipts less expenses** is cash movement from these recorded transactions. This feature does not calculate profit, opening bank balances, inventory purchase costs, stock valuation, GST, bank settlement or tax returns. Card receipts are held in **Card clearing** because a recorded card payment does not prove bank settlement. Catalogue-linked counter bills reduce shared online stock at sale time; later payments only update the receivable and receipt accounts.
 
 ## Validation
 

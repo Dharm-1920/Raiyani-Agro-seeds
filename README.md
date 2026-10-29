@@ -10,7 +10,7 @@ Checkout offers Cash on Delivery and UPI QR. QR payment uses the shop's receivin
 
 ## Run locally
 
-Prerequisites: Node 22+, MongoDB (or `docker compose up -d` for MongoDB).
+Prerequisites: Node 22+ and a transaction-capable MongoDB replica set or Atlas deployment. `docker compose up -d --wait` starts a local single-node replica set for counter-bill stock synchronization. Use `mongodb://127.0.0.1:27017/raiyani_agro?replicaSet=rs0` with that Compose setup. An existing standalone MongoDB needs a replica-set configuration before saving stock-linked bills; do not reset or reseed existing data.
 
 ```bash
 cd server
@@ -48,7 +48,7 @@ Preserve your current `server/.env`, product uploads and MongoDB data when copyi
 
 See **UI_EDIT_GUIDE.md** for UI files and **ADMIN_SETUP.md** for admin access. APIs: `/api/auth/*`, `/api/account/cart`, `/api/products`, `/api/orders`, `/api/payments/options`, `/api/admin/*`, `/api/contact`.
 
-`npm test` in server runs 134 backend tests. `npm run build` in client builds the frontend. Mocked browser checks cover login-first access, account isolation, QR/reference submission, COD checkout, account recovery, invoice consent, counter billing and admin management. Actual MongoDB/bank transactions and messaging providers require end-to-end verification with accounts you control.
+`npm test` in server runs 142 backend tests, plus an optional real MongoDB integration test. Set `COUNTER_STOCK_MONGOD` to a local `mongod` executable to include that test: it starts an isolated temporary replica set and verifies stock/bill commits, rollback, concurrent retries and competition with online stock deductions without connecting to the shop database. `npm run build` in client builds the frontend. Browser checks cover login-first access, account isolation, QR/reference submission, COD checkout, account recovery, invoice consent, counter billing, product cards, shared stock and admin management. Bank transactions and messaging providers require verification with accounts you control.
 
 ## Login and invoice delivery
 

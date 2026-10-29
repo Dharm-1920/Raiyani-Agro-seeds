@@ -6,7 +6,9 @@ const delivery = require('../services/invoice-delivery');
 const { prepareBill } = require('../services/counter-bills');
 const books = require('../services/bookkeeping');
 const reminders = require('../services/payment-reminders');
+const { saveStockBill } = require('../services/counter-stock');
 router.use(protect, adminOnly);
+router.use((req, res, next) => { res.set('Cache-Control', 'private, no-store'); next(); });
 router.get('/', async (req, res, next) => {
   try {
     const page = Math.max(1, Math.min(10000, Number.parseInt(req.query.page, 10) || 1));
@@ -26,7 +28,11 @@ router.post('/', async (req, res, next) => {
         if (data.shipping.name !== customer.name || data.shipping.phone !== (customer.phone || '') || data.shipping.address !== (customer.address || '')) return res.status(409).json({ message: 'Saved customer details changed. Search for and select the customer again.' });
       }
       const now = new Date();
-      try { bill = await CounterBill.create({ ...data, ...books.initialPayment(data, req.user._id, now), createdAt: now, user: req.user._id, invoiceNoticePending: data.invoiceWhatsApp }); created = true; }
+      const document = { ...data, ...books.initialPayment(data, req.user._id, now), createdAt: now, user: req.user._id, invoiceNoticePending: data.invoiceWhatsApp };
+      try {
+        if (data.items.some(item => item.product)) ({ bill, created } = await saveStockBill(document));
+        else { bill = await CounterBill.create(document); created = true; }
+      }
       catch (error) {
         if (error.code !== 11000) throw error;
         bill = await CounterBill.findOne({ requestKey: data.requestKey });
@@ -36,7 +42,7 @@ router.post('/', async (req, res, next) => {
     // A queue outage must never make a saved sale look unsuccessful. The worker retries.
     if (bill.invoiceNoticePending) await delivery.queueCounterBill(bill).catch(() => {});
     res.status(created ? 201 : 200).json(books.publicBill(bill));
-  } catch (error) { if (error.status === 400) return res.status(400).json({ message: error.message }); next(error); }
+  } catch (error) { if (error.status) return res.status(error.status).json({ message: error.message }); next(error); }
 });
 router.use('/:id', (req, res, next) => isValidObjectId(req.params.id) ? next() : res.status(404).json({ message: 'Bill not found.' }));
 router.get('/:id', async (req, res, next) => {

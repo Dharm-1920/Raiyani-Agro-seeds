@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import api, { errMsg } from './api';
-import { tr, productText, useLanguage } from './language.jsx';
+import { tr, useLanguage } from './language.jsx';
 import { useAuth } from './context';
 import { SHOP } from './config';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,10 +8,10 @@ import CounterPayments from './counter-payments';
 import { billFinancials } from './counter-ledger';
 import CounterCustomerPicker from './counter-customer-picker';
 import './counter-bills.css';
+import CounterProductPicker from './counter-product-picker';
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const blankItem = () => ({ name: '', nameGu: '', unit: '', qty: '1', price: '' });
-const newDraft = language => ({ requestKey: crypto.randomUUID(), customerRequestKey: crypto.randomUUID(), customerId: '', saveCustomer: true, customer: { name: '', phone: '', address: '' }, items: [blankItem()], discount: '0', paymentMethod: 'cash', paymentStatus: 'paid', invoiceLanguage: language, invoiceWhatsApp: false, remindersEnabled: false });
+const newDraft = language => ({ requestKey: crypto.randomUUID(), customerRequestKey: crypto.randomUUID(), customerId: '', saveCustomer: true, customer: { name: '', phone: '', address: '' }, items: [], discount: '0', paymentMethod: 'cash', paymentStatus: 'paid', invoiceLanguage: language, invoiceWhatsApp: false, remindersEnabled: false });
 const billNumber = bill => 'CS-' + bill._id.toUpperCase();
 const deliveryText = status => ({ accepted: 'Accepted by the WhatsApp service', pending: 'Queued for WhatsApp', sending: 'Sending on WhatsApp', failed: 'WhatsApp sending failed. Share the bill manually.', not_requested: 'WhatsApp was not requested' })[status] || 'Queued for WhatsApp';
 
@@ -42,9 +42,9 @@ export default function CounterBills() {
   const [list, setList] = useState({ items: [], total: 0, whatsappConfigured: false });
   const [page, setPage] = useState(1), [loading, setLoading] = useState(true), [listError, setListError] = useState('');
   const [selected, setSelected] = useState(null), [busy, setBusy] = useState(''), [error, setError] = useState(''), [notice, setNotice] = useState('');
-  const [query, setQuery] = useState(''), [products, setProducts] = useState([]), [productError, setProductError] = useState('');
   const [delivery, setDelivery] = useState(null), [shareLink, setShareLink] = useState('');
   const [retryPayload, setRetryPayload] = useState(null);
+  const [inventoryVersion, setInventoryVersion] = useState(0);
   const submitLock = useRef(false);
   const listSequence = useRef(0);
   useEffect(() => {
@@ -72,14 +72,6 @@ export default function CounterBills() {
   };
   useEffect(() => { load(); return () => { listSequence.current++; }; }, [page]);
   useEffect(() => { try { sessionStorage.setItem(storageKey, JSON.stringify(draft)); } catch { /* Saving a bill still works without browser storage. */ } }, [draft, storageKey]);
-  useEffect(() => {
-    if (!query.trim()) { setProducts([]); setProductError(''); return; }
-    let active = true;
-    const timer = setTimeout(() => {
-      api.get('/products', { params: { all: 1, search: query.trim(), limit: 8 } }).then(({ data }) => { if (active) { setProducts(data.items); setProductError(data.items.length ? '' : 'No matching products. Type the item manually below.'); } }).catch(() => { if (active) setProductError('Products could not be loaded. You can type the item manually.'); });
-    }, 250);
-    return () => { active = false; clearTimeout(timer); };
-  }, [query]);
   useEffect(() => { setDelivery(null); setShareLink(''); }, [selected?._id]);
   const update = (key, value) => setDraft(current => ({ ...current, [key]: value }));
   const chooseCustomer = customer => {
@@ -90,20 +82,15 @@ export default function CounterBills() {
     setDraft(current => ({ ...current, customerId: '', customerRequestKey: crypto.randomUUID(), customer: { name: '', phone: '', address: '' }, saveCustomer: true, invoiceWhatsApp: false, remindersEnabled: false }));
     if (new URLSearchParams(location.search).has('customer')) navigate('/admin?tab=Counter%20bills', { replace: true });
   };
-  const updateItem = (index, key, value) => setDraft(current => ({ ...current, items: current.items.map((item, i) => i === index ? { ...item, [key]: value } : item) }));
-  const addProduct = product => {
-    const item = { name: product.name, nameGu: product.nameGu || '', unit: product.unit || '', qty: '1', price: String(product.price) };
-    setDraft(current => ({ ...current, items: current.items.length === 1 && !current.items[0].name && !current.items[0].price ? [item] : [...current.items, item].slice(0, 100) }));
-    setQuery(''); setProducts([]);
-  };
   const reset = () => {
-    setDraft(newDraft(language)); setSelected(null); setError(''); setNotice(''); setRetryPayload(null); setQuery('');
+    setDraft(newDraft(language)); setSelected(null); setError(''); setNotice(''); setRetryPayload(null);
     try { sessionStorage.removeItem(storageKey); } catch { /* Storage may be unavailable. */ }
     if (new URLSearchParams(location.search).has('bill') || new URLSearchParams(location.search).has('customer')) navigate('/admin?tab=Counter%20bills', { replace: true });
   };
   const save = async event => {
     event.preventDefault();
     if (submitLock.current) return;
+    if (!draft.items.length) { setError('Add at least one product or manual item before saving.'); return; }
     submitLock.current = true;
     let payload = retryPayload || draft;
     setBusy('save'); setError(''); setNotice('');
@@ -123,6 +110,7 @@ export default function CounterBills() {
       setError(errMsg(failure));
       // Keep the exact request after a timeout so retrying cannot create a second sale.
       if (!failure.response || failure.response.status >= 500) setRetryPayload(payload);
+      else { setRetryPayload(null); setInventoryVersion(value => value + 1); }
     } finally { setBusy(''); submitLock.current = false; }
   };
   const pdf = async () => (await api.get(`/admin/counter-bills/${selected._id}/invoice`, { params: { lang: selected.invoiceLanguage }, responseType: 'blob' })).data;
@@ -171,14 +159,12 @@ export default function CounterBills() {
       <Receipt bill={selected} />
     </section> : <form className="counter-screen-only" onSubmit={save}>
       <fieldset disabled={Boolean(busy) || Boolean(retryPayload)} className="counter-form">
-        <section className="admin-panel"><h3>{tr('Customer details')}</h3>
+        <CounterProductPicker items={draft.items} inventoryVersion={inventoryVersion} onChange={change => setDraft(current => ({ ...current, items: change(current.items) }))} />
+        <section className="admin-panel" id="counter-checkout"><h3>{tr('Customer details')}</h3>
           <CounterCustomerPicker customerId={draft.customerId} disabled={Boolean(busy)} onSelect={chooseCustomer} onClear={clearCustomer} />
           <div className="formgrid"><label>{tr('Customer name')}<input required readOnly={Boolean(draft.customerId)} maxLength={120} value={draft.customer.name} onChange={event => update('customer', { ...draft.customer, name: event.target.value })} autoComplete="name" /></label><label>{tr('Customer WhatsApp number')}<input type="tel" readOnly={Boolean(draft.customerId)} maxLength={40} placeholder="+91" value={draft.customer.phone} onChange={event => update('customer', { ...draft.customer, phone: event.target.value })} autoComplete="tel" /></label><label className="counter-wide">{tr('Address (optional)')}<input readOnly={Boolean(draft.customerId)} maxLength={500} value={draft.customer.address} onChange={event => update('customer', { ...draft.customer, address: event.target.value })} /></label></div>
           {!draft.customerId && <label className="counter-consent"><input type="checkbox" checked={draft.saveCustomer !== false} onChange={event => update('saveCustomer', event.target.checked)} /><span>{tr('Save this customer for future visits when saving the bill.')}</span></label>}
           <label className="counter-consent"><input type="checkbox" checked={draft.invoiceWhatsApp} onChange={event => update('invoiceWhatsApp', event.target.checked)} /><span>{tr('Customer requests this bill on WhatsApp.')}</span></label><p className="muted">{tr(list.whatsappConfigured ? 'Requested bills are queued for automatic WhatsApp sending after saving.' : 'Automatic WhatsApp is not connected. Share the saved bill using WhatsApp.')}</p></section>
-        <section className="admin-panel"><h3>{tr('Items & manual prices')}</h3><label>{tr('Copy from catalogue (optional)')}<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={tr('Search a product or type an item below')} /></label>{products.length > 0 && <div className="counter-product-results">{products.map(product => <button key={product._id} type="button" className="secondary" disabled={draft.items.length >= 100} onClick={() => addProduct(product)}>{productText(product)} <span>{money(product.price)}</span></button>)}</div>}{productError && <p role="status">{tr(productError)}</p>}<p className="muted">{tr('Counter bills keep separate sales records. Catalogue stock and website prices are unchanged.')}</p>
-          <div className="counter-lines">{draft.items.map((item, index) => <div className="counter-line" key={index}><span className="counter-line-number">{index + 1}</span><label className="counter-item-name">{tr('Item name')}<input aria-label={tr('Item name')} required maxLength={220} value={item.name} onChange={event => updateItem(index, 'name', event.target.value)} /><input aria-label={tr('Gujarati item name (optional)')} placeholder={tr('Gujarati item name (optional)')} maxLength={220} value={item.nameGu} onChange={event => updateItem(index, 'nameGu', event.target.value)} /></label><label>{tr('Unit')}<input maxLength={30} placeholder={tr('pack / kg')} value={item.unit} onChange={event => updateItem(index, 'unit', event.target.value)} /></label><label>{tr('Quantity')}<input type="number" min="0.001" max="10000" step="0.001" required value={item.qty} onChange={event => updateItem(index, 'qty', event.target.value)} /></label><label>{tr('Selling price (₹)')}<input type="number" min="0" max="10000000" step="0.01" required value={item.price} onChange={event => updateItem(index, 'price', event.target.value)} /></label><div className="counter-line-amount"><small>{tr('Amount')}</small><b>{money(Math.round(Math.round(Number(item.price || 0) * 100) * Number(item.qty || 0)) / 100)}</b><button type="button" className="link danger" disabled={draft.items.length === 1} aria-label={`${tr('Remove item')} ${index + 1}`} onClick={() => update('items', draft.items.filter((_, i) => i !== index))}>{tr('Remove')}</button></div></div>)}</div><button type="button" className="secondary" disabled={draft.items.length >= 100} onClick={() => update('items', [...draft.items, blankItem()])}>+ {tr('Add item')}</button>
-        </section>
         <section className="admin-panel counter-payment">
           <div><h3>{tr('Payment & bill')}</h3><div className="formgrid">
             <label>{tr('Payment method')}<select value={draft.paymentMethod} onChange={event => setDraft(current => ({ ...current, paymentMethod: event.target.value, paymentStatus: event.target.value === 'later' ? 'pending' : current.paymentStatus }))}><option value="cash">{tr('Cash')}</option><option value="upi">UPI</option><option value="card">{tr('Card')}</option><option value="later">{tr('Pay later (credit)')}</option></select></label>
@@ -190,6 +176,7 @@ export default function CounterBills() {
       </fieldset>
       {retryPayload && <div className="counter-notice"><p>{tr('The last save could not be confirmed. Retry the same bill to avoid a duplicate.')}</p><button disabled={Boolean(busy)}>{tr('Retry saving bill')}</button></div>}
     </form>}
+    {!selected && <div className="counter-mobile-total counter-screen-only"><div><small>{draft.items.filter(item => item.name || item.productId).length} {tr('items selected')}</small><strong>{money(total)}</strong></div><a href="#counter-current-bill">{tr('Review bill')} ↑</a></div>}
     <section className="admin-panel counter-screen-only"><div className="admin-section-title"><h3>{tr('Counter bill history')} <span className="mini-badge">{list.total}</span></h3><button type="button" className="secondary" disabled={loading} onClick={load}>{tr('Refresh bills')}</button></div>{loading ? <p role="status">{tr('Loading bills…')}</p> : listError ? <p className="err" role="alert">{tr(listError)}</p> : list.items.length ? <table><thead><tr>{['Bill', 'Customer', 'Date', 'Total', 'Payment', 'Actions'].map(text => <th key={text}>{tr(text)}</th>)}</tr></thead><tbody>{list.items.map(bill => <tr key={bill._id}><td><b>CS-{bill._id.slice(-8).toUpperCase()}</b></td><td>{bill.shipping.name}<small>{bill.shipping.phone}</small></td><td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td><td>{money(bill.totalAmount)}</td><td>{tr(bill.paymentMethod)} · {tr(bill.paymentStatus)}</td><td><button type="button" className="secondary" disabled={Boolean(busy)} onClick={() => { setSelected(bill); setNotice(''); setError(''); }}>{tr('Open bill')}</button></td></tr>)}</tbody></table> : <p className="admin-empty">{tr('Your saved counter bills will appear here.')}</p>}
       <div className="counter-pagination"><button type="button" className="secondary" disabled={page === 1 || loading} onClick={() => setPage(current => current - 1)}>{tr('Previous')}</button><span>{tr('Page')} {page} / {Math.max(1, Math.ceil(list.total / 25))}</span><button type="button" className="secondary" disabled={page * 25 >= list.total || loading} onClick={() => setPage(current => current + 1)}>{tr('Next')}</button></div>
     </section>

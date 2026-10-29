@@ -69,7 +69,7 @@ const CounterBill = mongoose.model('CounterBill', new Schema({
   source: { type: String, default: 'counter', enum: ['counter'] },
   counterCustomer: { type: Schema.Types.ObjectId, ref: 'CounterCustomer', index: true },
   shipping: { name: String, phone: String, address: String },
-  items: [{ name: String, nameGu: String, unit: String, price: Number, qty: Number }],
+  items: [{ product: { type: Schema.Types.ObjectId, ref: 'Product' }, name: String, nameGu: String, unit: String, price: Number, qty: Number }],
   itemsTotal: Number, shippingFee: { type: Number, default: 0 }, discount: Number, totalAmount: Number,
   paymentMethod: { type: String, enum: ['cash', 'upi', 'card', 'later'], required: true },
   paymentStatus: { type: String, enum: ['pending', 'partial', 'paid'], required: true },

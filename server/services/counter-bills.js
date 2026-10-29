@@ -35,7 +35,12 @@ function prepareBill(body) {
     const qty = decimal(item.qty, 3, 10000, 'Use a quantity above zero and up to 10000, with up to three decimal places.');
     if (qty <= 0) invalid('Quantity must be above zero.');
     cents += Math.round(Math.round(price * 100) * qty);
-    return { name: text(item.name, 220, true), nameGu: text(item.nameGu, 220), unit: text(item.unit, 30), price, qty };
+    const line = { name: text(item.name, 220, true), nameGu: text(item.nameGu, 220), unit: text(item.unit, 30), price, qty };
+    if (item.productId != null) {
+      if (typeof item.productId !== 'string' || !/^[a-fA-F0-9]{24}$/.test(item.productId)) invalid('Select a valid catalogue product.');
+      line.product = item.productId.toLowerCase();
+    }
+    return line;
   });
   const discount = decimal(body.discount ?? 0, 2, 1000000000, 'Enter a valid discount with up to two decimal places.');
   if (Math.round(discount * 100) > cents) invalid('Discount cannot exceed the items total.');
