@@ -31,6 +31,12 @@ main#content.cover-main{max-width:none;padding:0;margin:0;min-height:100vh}
 .cover-bottom>a{display:inline-flex;align-items:center;gap:22px;color:#e4dfc5;font-size:10px}
 .cover-bottom>a>span{font-size:22px}
 .cover-discover{max-width:1320px;margin:auto;padding:76px 36px 70px;scroll-margin-top:25px}
+.cover-app-banner{display:flex;align-items:center;justify-content:space-between;gap:28px;max-width:1240px;margin:0 auto;padding:28px 36px;background:#e8d5a0;color:#233f2a}
+.cover-app-banner h2{font-family:Georgia,serif;font-size:30px;font-weight:400;letter-spacing:-.7px;margin:8px 0 5px}
+.cover-app-banner p{margin:0;color:#526947;font-size:12px}
+.cover-app-banner .eyebrow{color:#526947}
+.cover-app-banner .btn{display:inline-flex;align-items:center;gap:12px;flex:none;background:#173c29;color:#fff8e8;border-color:#173c29}
+.cover-app-banner .btn span{font-size:20px;line-height:1}
 .cover-discover-heading{position:relative;max-width:620px}
 .cover-discover-heading h2{font-family:Georgia,serif;font-size:49px;font-weight:400;letter-spacing:-1.8px;line-height:1.15;margin:17px 0 20px}
 .cover-discover-heading h2 em{font-weight:400;color:#879064}
@@ -69,6 +75,7 @@ html[lang="gu"] .cover-eyebrow,html[lang="gu"] .cover-bottom>span:nth-child(2),h
 .cover-family-note{max-width:270px;font-size:9px;align-items:flex-start}.cover-family-note svg{margin-top:3px}
 .cover-bottom{padding:18px 0 22px;flex-wrap:wrap;gap:16px}.cover-bottom>span:first-child{font-size:9px}.cover-bottom>span:nth-child(2){font-size:6px;letter-spacing:1.6px}.cover-bottom>a{width:100%;justify-content:space-between;font-size:9px;padding-top:12px;border-top:1px solid #ffffff17}
 .cover-discover{padding:45px 22px}.cover-discover-heading h2{font-size:37px}.cover-discover-heading>p{font-size:12px;max-width:280px}
+.cover-app-banner{margin:0 22px;padding:24px 22px;align-items:flex-start;flex-direction:column;gap:18px}.cover-app-banner h2{font-size:27px}.cover-app-banner .btn{font-size:11px;padding:14px 22px}
 .ras-story-cards{grid-template-columns:1fr;gap:19px;margin-top:27px}.ras-story-card{min-height:350px}.ras-story-card-copy{left:25px;right:25px;bottom:25px}.ras-story-card-copy h2{font-size:30px}
 .cover-footer{padding:23px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:10px}
 html[lang="gu"] .cover-header .ras-wordmark>strong{font-size:22px;letter-spacing:0}html[lang="gu"] .cover-copy h1{font-size:40px;line-height:1.55}
