@@ -63,7 +63,7 @@ export function LanguageSelector(){
 export function Brand({large=false}){
   const {language}=useLanguage();
   return <span className={'shop-brand ras-brand'+(large?' shop-brand-large':'')}>
-    <img className="ras-emblem" src="/assets/brand/ras-mark.webp" width="1071" height="664" decoding="async" alt={language==='gu'?'રૈયાણી એગ્રો સીડ્સ લોગો':'Raiyani Agro Seeds logo'} />
+    <img className="ras-emblem" src="/assets/brand/ras-badge.webp" width="320" height="320" decoding="async" alt={language==='gu'?'રૈયાણી એગ્રો સીડ્સ લોગો':'Raiyani Agro Seeds logo'} />
     <span className="ras-wordmark"><strong>{language==='gu'?'રૈયાણી':'RAIYANI'}</strong><span>{language==='gu'?'એગ્રો સીડ્સ':'AGRO SEEDS'}</span><small>{language==='gu'?'કુદરત સાથે વિકાસ':'ROOTED IN NATURE'}</small></span>
   </span>;
 }
