@@ -10,3 +10,8 @@
 .header-sign-in:focus-visible{outline:3px solid #a3b58b;outline-offset:3px}
 @media (max-width:520px){.header-sign-in{width:36px;height:36px;padding:0;justify-content:center}.header-sign-in span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
 .guest-contact-note{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+/* RAS logo image: keep its natural shape; heights come from the existing .ras-emblem size rules. */
+img.ras-emblem{width:auto!important;object-fit:contain}
+.nav img.ras-emblem{height:54px}
+@media(max-width:380px){.nav img.ras-emblem{height:42px}}
+.cover-header img.ras-emblem,.foot img.ras-emblem,.admin-sidebar img.ras-emblem,.admin-login aside img.ras-emblem{box-sizing:content-box;padding:5px 9px;border-radius:12px;background:#FAF5EA;box-shadow:0 2px 10px #0003}

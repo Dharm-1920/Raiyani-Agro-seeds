@@ -63,14 +63,7 @@ export function LanguageSelector(){
 export function Brand({large=false}){
   const {language}=useLanguage();
   return <span className={'shop-brand ras-brand'+(large?' shop-brand-large':'')}>
-    <svg className="ras-emblem" viewBox="0 0 80 80" role="img" aria-label={language==='gu'?'રૈયાણી એગ્રો સીડ્સ લોગો':'Raiyani Agro Seeds logo'}>
-      <circle cx="40" cy="40" r="37" fill="none" stroke="currentColor" strokeWidth="1" />
-      <circle cx="40" cy="40" r="32" fill="none" stroke="currentColor" strokeWidth=".6" opacity=".4" />
-      <path d="M40 48V32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M40 48V32M40 37C27 37 23 29 24 23c10-1 17 4 16 14ZM40 33c0-10 7-15 16-14 1 9-6 16-16 17" fill="currentColor" />
-      <path d="M20 43c3 1 5 6 9 9l11 6 11-6c4-3 6-8 9-9M26 43l8 7 6 2 6-2 8-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M33 63h14" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>
+    <img className="ras-emblem" src="/assets/brand/ras-mark.webp" width="1071" height="664" decoding="async" alt={language==='gu'?'રૈયાણી એગ્રો સીડ્સ લોગો':'Raiyani Agro Seeds logo'} />
     <span className="ras-wordmark"><strong>{language==='gu'?'રૈયાણી':'RAIYANI'}</strong><span>{language==='gu'?'એગ્રો સીડ્સ':'AGRO SEEDS'}</span><small>{language==='gu'?'કુદરત સાથે વિકાસ':'ROOTED IN NATURE'}</small></span>
   </span>;
 }
