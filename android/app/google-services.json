@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188785345769",
+    "project_id": "raiyani-agro-seeds-56ac6",
+    "storage_bucket": "raiyani-agro-seeds-56ac6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188785345769:android:f0f0e2ebc78a8448e11c78",
+        "android_client_info": {
+          "package_name": "com.raiyani.agroseeds"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu-m0A8eQ2tY4CQygJ9zsloKk7S-LVR7E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
