@@ -68,6 +68,7 @@ export function Shop() {
     pages: 1
   });
   const loc = useLocation();
+  const navigate = useNavigate();
   const [f, setF] = useState({
     search: new URLSearchParams(loc.search).get('search') || '',
     category: new URLSearchParams(loc.search).get('category') || '',
@@ -121,7 +122,7 @@ export function Shop() {
           <option value="new">{tr("Newest")}</option><option value="price_asc">{tr("Price: low to high")}</option><option value="price_desc">{tr("Price: high to low")}</option>
         </select>
       </div>
-      {tr(loading ? <p className="center">{tr("Loading\u2026")}</p> : error ? <p className="empty-state" role="alert">{tr(error)}</p> : data.items.length ? <div className="grid">{tr(data.items.map(p => <Card key={p._id} p={p} />))}</div> : <p className="center">{tr("No products found.")}</p>)}
+      {tr(loading ? <div className="grid" aria-label={tr("Loading products")} aria-busy="true">{[1, 2, 3, 4, 5, 6, 7, 8].map(n => <div key={n} className="skeleton" />)}</div> : error ? <p className="empty-state" role="alert">{tr(error)}</p> : data.items.length ? <div className="grid">{tr(data.items.map(p => <Card key={p._id} p={p} />))}</div> : <div className="empty-state"><Icon name="search" size={30} /><h3>{tr("No products found.")}</h3><p>{tr("Try a different word, or ask us on WhatsApp and we will help you find it.")}</p>{(f.search || f.category) && <button type="button" className="btn" onClick={() => { setF(s => ({ ...s, search: '', category: '', page: 1 })); if (loc.search) navigate('/shop'); }}>{tr("Clear filters")}</button>}</div>)}
       {tr(data.pages > 1 && <div className="pager">
         <button disabled={f.page <= 1} onClick={() => set('page', f.page - 1)}>{tr("Prev")}</button><span>{tr("Page ")}{tr(f.page)}{tr(" of ")}{tr(data.pages)}</span>
         <button disabled={f.page >= data.pages} onClick={() => set('page', f.page + 1)}>{tr("Next")}</button></div>)}
@@ -140,11 +141,28 @@ export function Product() {
     return () => { active = false; };
   }, [id]);
   if (msg) return <p className="center">{tr(msg)}</p>;
-  if (!p) return <p className="center">{tr("Loading\u2026")}</p>;
+  if (!p) return <div className="detail" aria-busy="true" aria-label={tr("Loading\u2026")}><div className="skeleton product-skeleton" /><div className="skeleton product-skeleton short" /></div>;
+  const askText = `${tr("Hello")} ${SHOP.name}, ${tr("I want to know more about")}: ${productText(p)} (${productText(p, "unit")}) - ${window.location.href}`;
   return <><div className="breadcrumbs"><Link to="/shop">{tr("Shop")}</Link><span>/</span><span>{productText(p, "category")}</span><span>/</span><span>{productText(p)}</span></div><div className="detail"><Img p={p} />
       <div><h1>{productText(p)}</h1><p className="muted">{productText(p, "category")} · {productText(p, "unit")}</p>
         <p className="big">{tr(rs(p.price))} {tr(p.mrp > p.price && <s className="muted">{tr(rs(p.mrp))}</s>)}</p><p>{productText(p, "description")}</p>
-        {p.stock > 0 ? <><p className="muted">{tr(p.stock)}{tr(" in stock")}</p><ProductPurchase key={p._id} product={p} /></> : <NotifyButton product={p} />}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div></div></div></>;
+        {p.stock > 0 ? <><p className="muted">{tr(p.stock)}{tr(" in stock")}</p><ProductPurchase key={p._id} product={p} /></> : <NotifyButton product={p} />}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div><a className="whatsapp-ask" href={`https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(askText)}`} target="_blank" rel="noreferrer"><WhatsAppMark />{tr("Ask about this product on WhatsApp")}</a></div></div><RelatedProducts product={p} /></>;
+}
+function WhatsAppMark() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg>;
+}
+function RelatedProducts({ product }) {
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    let active = true;
+    setItems([]);
+    api.get('/products', { params: { category: product.category, limit: 5 } }).then(r => {
+      if (active) setItems((r.data.items || []).filter(item => item._id !== product._id).slice(0, 4));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [product._id, product.category]);
+  if (!items.length) return null;
+  return <section className="section related-products"><div className="section-head"><div><span className="eyebrow">{tr("MORE FROM THIS CATEGORY")}</span><h2>{tr("You may also like")}</h2></div><Link className="text-link" to={'/shop?category=' + encodeURIComponent(product.category)}>{tr("See all ")}<Icon name="arrow" size={18} /></Link></div><div className="grid">{tr(items.map(item => <Card key={item._id} p={item} />))}</div></section>;
 }
 export function Cart() {
   const {
@@ -155,15 +173,34 @@ export function Cart() {
     ready: cartReady,
     saving
   } = useCart();
-  if (!cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
-  if (!items.length) return <p className="center">{tr("Your cart is empty. ")}<Link to="/shop">{tr("Browse products")}</Link></p>;
-  return <div className="box"><h1>{tr("Your cart")}</h1><p className="muted" role="status">{tr(saving ? 'Saving your cart…' : 'Your cart is saved to your account.')}</p>
-      {tr(items.map(i => <div className="row" key={i.id}><span className="cart-item-name">{productText(i)}</span>
-          <QuantityControl value={i.qty} max={i.stock} disabled={!i.stock} onChange={qty => setQty(i.id, qty)} name={productText(i)} />
-          <b>{tr(rs(i.price * i.qty))}</b><button className="link" onClick={() => remove(i.id)}>{tr("Remove")}</button></div>))}
-      <p className="big">{tr("Subtotal: ")}{tr(rs(total))}</p><p className="muted">{tr("Shipping is calculated at checkout (free on orders \u20B9500 and above).")}</p>
-      <Link className="btn" to="/checkout">{tr("Checkout")}</Link></div>;
+  const { language } = useLanguage();
+  if (!cartReady) return <div className="cart-page" aria-busy="true" aria-label={tr("Loading your account cart…")}><div className="skeleton cart-skeleton" /><div className="skeleton cart-skeleton short" /></div>;
+  if (!items.length) return <div className="empty-state cart-empty"><Icon name="bag" size={40} /><h2>{tr("Your cart is empty")}</h2><p>{tr("Find seeds, fertilizers and tools for your next season.")}</p><Link className="btn" to="/shop">{tr("Browse products")}<Icon name="arrow" size={18} /></Link></div>;
+  const fee = deliveryFee(total), remaining = FREE_DELIVERY_FROM - total;
+  return <div className="cart-page">
+    <section className="cart-items"><div className="cart-title"><h1>{tr("Your cart")}</h1><p className="muted" role="status">{tr(saving ? 'Saving your cart…' : 'Your cart is saved to your account.')}</p></div>
+      <div className={'delivery-progress' + (remaining <= 0 ? ' done' : '')}><p><Icon name="truck" size={18} /><span>{remaining > 0 ? (language === 'gu' ? <>મફત ડિલિવરી માટે <b>{rs(remaining)}</b> ની વધુ ખરીદી કરો</> : <>Add <b>{rs(remaining)}</b> more for free delivery</>) : tr("You have unlocked free delivery!")}</span></p><span className="delivery-bar" aria-hidden="true"><i style={{ width: Math.min(100, total / FREE_DELIVERY_FROM * 100) + '%' }} /></span></div>
+      {items.map(i => <article className="cart-line" key={i.id}>
+        <Link to={'/product/' + i.id} className="cart-thumb" tabIndex={-1} aria-hidden="true">{i.image ? <img src={i.image} alt="" loading="lazy" /> : <Icon name="leaf" size={28} />}</Link>
+        <div className="cart-line-info"><Link to={'/product/' + i.id} className="cart-item-name">{productText(i)}</Link><span className="muted">{tr(rs(i.price))} {tr("each")}</span>{!i.stock && <span className="tag cancelled">{tr("Out of stock")}</span>}</div>
+        <QuantityControl value={i.qty} max={i.stock} disabled={!i.stock} onChange={qty => setQty(i.id, qty)} name={productText(i)} />
+        <b className="cart-line-total">{tr(rs(i.price * i.qty))}</b>
+        <button type="button" className="cart-remove" onClick={() => remove(i.id)} aria-label={`${tr("Remove")} ${productText(i)}`} title={tr("Remove")}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg></button>
+      </article>)}
+      <Link className="text-link cart-continue" to="/shop">← {tr("Continue shopping")}</Link>
+    </section>
+    <aside className="cart-summary" aria-label={tr("Order summary")}><h2>{tr("Order summary")}</h2>
+      <p><span>{tr("Subtotal")}</span><span>{tr(rs(total))}</span></p>
+      <p><span>{tr("Delivery")}</span><span>{fee ? tr(rs(fee)) : <b className="free">{tr("Free")}</b>}</span></p>
+      <p className="cart-summary-total"><span>{tr("Total")}</span><b>{tr(rs(total + fee))}</b></p>
+      <Link className="btn" to="/checkout">{tr("Checkout")}<Icon name="arrow" size={18} /></Link>
+      <small><Icon name="check" size={14} />{tr("Cash on Delivery or UPI payment")}</small>
+      <small><Icon name="pin" size={14} />{tr("Your local Gondal shop")}</small>
+    </aside>
+  </div>;
 }
+const FREE_DELIVERY_FROM = 500;
+const deliveryFee = total => total >= FREE_DELIVERY_FROM ? 0 : 40;
 export function Checkout() {
   const { language } = useLanguage();
   const location = useLocation();
@@ -196,7 +233,7 @@ export function Checkout() {
       unavailable: true
     }));
   }, []);
-  const fee = total >= 500 ? 0 : 40;
+  const fee = deliveryFee(total);
   const place = async e => {
     e.preventDefault();
     setError('');
@@ -309,7 +346,7 @@ export function Contact() {
     }
   };
   return <><div className="page-heading"><span className="eyebrow">{tr('LET’S TALK GROWING')}</span><h1>{tr('Contact us')}</h1><p>{tr('Visit, call or send us a message. We’re here to help.')}</p></div>
-    <div className="contact-layout"><section className="contact-info"><h2>{tr(SHOP.name)}</h2><ShopDetails /><a className="btn" href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr('Get directions')}</a><iframe className="contact-map" title={tr('Shop location')} loading="lazy" src={`https://maps.google.com/maps?q=${SHOP.lat},${SHOP.lng}&z=16&output=embed`} /></section>
+    <div className="contact-layout"><section className="contact-info"><h2>{tr(SHOP.name)}</h2><div className="contact-quick"><a className="contact-quick-whatsapp" href={`https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(tr("Hello") + " " + SHOP.name)}`} target="_blank" rel="noreferrer"><WhatsAppMark /><span><b>{tr("Chat on WhatsApp")}</b><small>{tr("Quick answers about products and orders")}</small></span></a><a className="contact-quick-call" href={"tel:" + SHOP.phone.replace(/\s/g, "")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-3 2a12 12 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 5a2 2 0 0 1 2-2Z" /></svg><span><b>{tr("Call the shop")}</b><small>{SHOP.phone}</small></span></a></div><ShopDetails /><a className="btn" href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr('Get directions')}</a><iframe className="contact-map" title={tr('Shop location')} loading="lazy" src={`https://maps.google.com/maps?q=${SHOP.lat},${SHOP.lng}&z=16&output=embed`} /></section>
     <form className="box narrow" onSubmit={send}><h2>{tr('Send us a message')}</h2>
       <label>{tr("Name")}<input required value={f.name} onChange={e => setF({
         ...f,
