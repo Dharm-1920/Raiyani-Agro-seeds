@@ -9,3 +9,9 @@ __pycache__
 !.env.example
 *.archive
 *.dump
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+.android-tools
+RaiyaniAgroSeeds-debug.apk
