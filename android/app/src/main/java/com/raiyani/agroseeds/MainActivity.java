@@ -54,15 +54,13 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (url == null || !url.startsWith(SHOP_URL)) return;
-                AppNotifications.saveSession(getApplicationContext(), CookieManager.getInstance().getCookie(SHOP_URL));
-                if (AppNotifications.hasSession(getApplicationContext())) {
-                    NotificationCheckService.schedule(getApplicationContext());
-                    askForNotificationPermission();
-                    registerForInstantNotifications();
-                } else {
-                    NotificationCheckService.cancel(getApplicationContext());
-                }
+                if (url != null && url.startsWith(SHOP_URL)) syncSession(true);
+            }
+
+            // The website signs in and out without full page loads, so also check on in-app page changes.
+            @Override
+            public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                if (url != null && url.startsWith(SHOP_URL)) syncSession(true);
             }
 
             @Override
@@ -124,7 +122,20 @@ public class MainActivity extends Activity {
     protected void onPause() {
         AppNotifications.appVisible = false;
         CookieManager.getInstance().flush();
+        syncSession(false);
         super.onPause();
+    }
+
+    /** Starts phone notifications for the signed-in account, or stops them after sign-out. */
+    private void syncSession(boolean canAskPermission) {
+        AppNotifications.saveSession(getApplicationContext(), CookieManager.getInstance().getCookie(SHOP_URL));
+        if (AppNotifications.hasSession(getApplicationContext())) {
+            NotificationCheckService.schedule(getApplicationContext());
+            registerForInstantNotifications();
+            if (canAskPermission) askForNotificationPermission();
+        } else {
+            NotificationCheckService.cancel(getApplicationContext());
+        }
     }
 
     /** Only does something once Firebase is configured (google-services.json added to the app). */
