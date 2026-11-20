@@ -37,3 +37,6 @@
 @media(max-width:600px){.card .compact .purchase-buttons{grid-template-columns:1fr;justify-items:start}.card .compact .purchase-buttons button{max-width:100%}}
 @media(max-width:520px){.detail .product-purchase>.quantity-control{flex-shrink:0}.detail .purchase-buttons{flex-basis:100%}.detail .purchase-buttons button{padding:9px 12px;white-space:normal}.row .quantity-control{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.cart-fly-dot{display:none}.purchase-buttons button{transition:none}}
+.stock-status{display:inline-flex;align-items:center;gap:7px;margin:4px 0 10px;font-size:14px;font-weight:600;color:#2f6b3f}
+.stock-status:before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.stock-status.low{color:#a5650b}

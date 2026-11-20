@@ -115,7 +115,7 @@ reminderSchema.index({ status: 1, nextAttemptAt: 1 });
 const PaymentReminder = mongoose.model('PaymentReminder', reminderSchema);
 const Message = mongoose.model('Message', new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
-  name: String, email: String, message: String, isRead: { type: Boolean, default: false },
+  name: String, email: String, phone: String, message: String, isRead: { type: Boolean, default: false },
 }, { timestamps: true }));
 const notificationSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -150,7 +150,8 @@ const ProductImage = mongoose.model('ProductImage', new Schema({
 }, { timestamps: true }));
 const authTokenSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  purpose: { type: String, enum: ['reset', 'verify'], required: true },
+  purpose: { type: String, enum: ['reset', 'verify', 'app-login'], required: true },
+  challenge: String, // app-login only: SHA-256 of the secret the Android app keeps
   tokenHash: { type: String, required: true, unique: true },
   expiresAt: { type: Date, required: true },
 }, { timestamps: true });

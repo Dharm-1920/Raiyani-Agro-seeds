@@ -140,13 +140,17 @@ export function Product() {
     api.get('/products/' + id).then(r => { if (active) setP(r.data); }).catch(() => { if (active) setMsg('Product not found'); });
     return () => { active = false; };
   }, [id]);
+  const { language } = useLanguage();
+  useEffect(() => {
+    if (p) document.title = `${productText(p)} | ${language === 'gu' ? 'રૈયાણી એગ્રો સીડ્સ, ગોંડલ' : 'Raiyani Agro Seeds, Gondal'}`;
+  }, [p, language]);
   if (msg) return <p className="center">{tr(msg)}</p>;
   if (!p) return <div className="detail" aria-busy="true" aria-label={tr("Loading\u2026")}><div className="skeleton product-skeleton" /><div className="skeleton product-skeleton short" /></div>;
   const askText = `${tr("Hello")} ${SHOP.name}, ${tr("I want to know more about")}: ${productText(p)} (${productText(p, "unit")}) - ${window.location.href}`;
   return <><div className="breadcrumbs"><Link to="/shop">{tr("Shop")}</Link><span>/</span><span>{productText(p, "category")}</span><span>/</span><span>{productText(p)}</span></div><div className="detail"><Img p={p} />
       <div><h1>{productText(p)}</h1><p className="muted">{productText(p, "category")} · {productText(p, "unit")}</p>
         <p className="big">{tr(rs(p.price))} {tr(p.mrp > p.price && <s className="muted">{tr(rs(p.mrp))}</s>)}</p><p>{productText(p, "description")}</p>
-        {p.stock > 0 ? <><p className="muted">{tr(p.stock)}{tr(" in stock")}</p><ProductPurchase key={p._id} product={p} /></> : <NotifyButton product={p} />}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div><a className="whatsapp-ask" href={`https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(askText)}`} target="_blank" rel="noreferrer"><WhatsAppMark />{tr("Ask about this product on WhatsApp")}</a></div></div><RelatedProducts product={p} /></>;
+        {p.stock > 0 ? <><p className={'stock-status' + (p.stock <= 5 ? ' low' : '')}>{tr(p.stock <= 5 ? 'Only a few left' : 'In stock')}</p><ProductPurchase key={p._id} product={p} /></> : <NotifyButton product={p} />}<div className="product-perks"><span><Icon name="truck" size={18} />{tr(" Free delivery from \u20B9500")}</span><span><Icon name="pin" size={18} />{tr(" Your local Gondal shop")}</span></div><a className="whatsapp-ask" href={`https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(askText)}`} target="_blank" rel="noreferrer"><WhatsAppMark />{tr("Ask about this product on WhatsApp")}</a></div></div><RelatedProducts product={p} /></>;
 }
 function WhatsAppMark() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg>;
@@ -326,22 +330,15 @@ export function MyOrders() {
 export function Account() { const { user } = useAuth(); return <AccountProfile key={user.id} />; }
 export function Contact() {
   const { user } = useAuth();
-  const [f, setF] = useState({
-      name: '',
-      email: '',
-      message: ''
-    }),
+  const blank = () => ({ name: user?.name || '', contact: user?.phone || user?.email || '', message: '' });
+  const [f, setF] = useState(blank),
     [st, setSt] = useState('');
   const send = async e => {
     e.preventDefault();
     try {
       await api.post('/contact', f);
       setSt('ok');
-      setF({
-        name: '',
-        email: '',
-        message: ''
-      });
+      setF(blank());
     } catch (x) {
       setSt(errMsg(x));
     }
@@ -353,10 +350,10 @@ export function Contact() {
         ...f,
         name: e.target.value
       })} /></label>
-      <label>{tr("Email")}<input type="email" required value={f.email} onChange={e => setF({
+      <label>{tr("Phone or email")}<input required autoComplete="tel" inputMode="text" placeholder="+91 98765 43210" value={f.contact} onChange={e => setF({
         ...f,
-        email: e.target.value
-      })} /></label>
+        contact: e.target.value
+      })} /><small className="muted">{tr("We will reply by phone, WhatsApp or email.")}</small></label>
       <label>{tr("Message")}<textarea required rows="4" value={f.message} onChange={e => setF({
         ...f,
         message: e.target.value

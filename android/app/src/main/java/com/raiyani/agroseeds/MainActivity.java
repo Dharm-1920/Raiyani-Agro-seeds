@@ -19,6 +19,8 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     static final String SHOP_URL = "https://raiyaniagroseeds.onrender.com/";
+    private static final String SHOP_HOST = "raiyaniagroseeds.onrender.com";
+    private static final String KEY_GOOGLE_VERIFIER = "google_verifier";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 1002;
     private WebView webView;
@@ -67,6 +69,11 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String scheme = uri.getScheme();
+                // Google blocks sign-in inside apps, so "Continue with Google" opens the phone's browser.
+                if (SHOP_HOST.equals(uri.getHost()) && "/api/auth/google/start".equals(uri.getPath())) {
+                    openGoogleSignIn(uri);
+                    return true;
+                }
                 if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
                     return false;
                 }
@@ -98,8 +105,40 @@ public class MainActivity extends Activity {
         webView.loadUrl(urlFor(getIntent()));
     }
 
-    /** Opens the page a tapped notification points to, otherwise the shop home. */
-    private static String urlFor(Intent intent) {
+    /** Opens Google sign-in in a browser tab, with a secret only this app can use to finish signing in. */
+    private void openGoogleSignIn(Uri start) {
+        try {
+            byte[] secret = new byte[32];
+            new java.security.SecureRandom().nextBytes(secret);
+            int flags = android.util.Base64.URL_SAFE | android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING;
+            String verifier = android.util.Base64.encodeToString(secret, flags);
+            String challenge = android.util.Base64.encodeToString(java.security.MessageDigest.getInstance("SHA-256").digest(verifier.getBytes("US-ASCII")), flags);
+            AppNotifications.prefs(this).edit().putString(KEY_GOOGLE_VERIFIER, verifier).apply();
+            Uri url = start.buildUpon().appendQueryParameter("app_challenge", challenge).build();
+            new androidx.browser.customtabs.CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(this, url);
+        } catch (Exception error) {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, start)); } catch (Exception ignored) { }
+        }
+    }
+
+    /** Opens the page a tapped notification points to, finishes a Google sign-in, otherwise the shop home. */
+    private String urlFor(Intent intent) {
+        Uri data = intent == null ? null : intent.getData();
+        if (data != null && "raiyaniagroseeds".equals(data.getScheme()) && "auth".equals(data.getHost())) {
+            String verifier = AppNotifications.prefs(this).getString(KEY_GOOGLE_VERIFIER, null);
+            AppNotifications.prefs(this).edit().remove(KEY_GOOGLE_VERIFIER).apply();
+            String code = data.getQueryParameter("code");
+            if (code == null || verifier == null) {
+                String error = data.getQueryParameter("error");
+                return SHOP_URL + "login?authError=" + (error != null && error.matches("[a-z_]+") ? error : "google_failed");
+            }
+            String next = data.getQueryParameter("next");
+            return Uri.parse(SHOP_URL + "api/auth/app-login").buildUpon()
+                    .appendQueryParameter("code", code)
+                    .appendQueryParameter("verifier", verifier)
+                    .appendQueryParameter("next", next != null ? next : "/home")
+                    .build().toString();
+        }
         String link = intent == null ? null : intent.getStringExtra(AppNotifications.EXTRA_LINK);
         if (link != null && link.startsWith("/") && !link.startsWith("//")) return SHOP_URL + link.substring(1);
         return SHOP_URL;
@@ -109,7 +148,7 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent.hasExtra(AppNotifications.EXTRA_LINK)) webView.loadUrl(urlFor(intent));
+        if (intent.hasExtra(AppNotifications.EXTRA_LINK) || intent.getData() != null) webView.loadUrl(urlFor(intent));
     }
 
     @Override

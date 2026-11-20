@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /account
+Disallow: /notifications
+
+Sitemap: https://raiyaniagroseeds.onrender.com/sitemap.xml

@@ -140,6 +140,39 @@ test('Google rejects unverified email and a mismatched ID-token nonce', async ()
   }
   assert.equal(users.length, 1);
 });
+test('Android app Google sign-in hands back a one-time code that only the app secret can redeem', async () => {
+  const crypto = require('node:crypto'), verifier = 'app-secret-verifier-0123456789-abcdefghijklmnop';
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  const start = await request(`/google/start?next=/home&app_challenge=${challenge}`);
+  const oauthCookie = start.headers.getSetCookie().find(value => value.startsWith('google_oauth=')).split(';')[0];
+  const state = jwt.verify(decodeURIComponent(oauthCookie.split('=')[1]), process.env.JWT_SECRET);
+  assert.equal(state.appChallenge, challenge);
+  googlePayload = { sub: 'app-google-id', email: 'app@example.com', email_verified: true, nonce: state.nonce, name: 'App Farmer' };
+  const callback = await request(`/google/callback?state=${state.state}&code=code`, undefined, oauthCookie);
+  // The browser gets no session; it gets a page that opens the app with a code.
+  assert.equal(cookie(callback), undefined);
+  const page = await callback.text();
+  const code = page.match(/intent:\/\/auth\?code=([\w-]+)&amp;next=%2Fhome#Intent;scheme=raiyaniagroseeds;package=com\.raiyani\.agroseeds;end/)[1];
+  // A stolen code is useless without the app's secret, and the attempt burns it.
+  const wrong = await request(`/app-login?code=${code}&verifier=not-the-secret`);
+  assert.match(wrong.headers.get('location'), /google_failed/); assert.equal(cookie(wrong), undefined);
+  const stolenThenRetried = await request(`/app-login?code=${code}&verifier=${verifier}`);
+  assert.match(stolenThenRetried.headers.get('location'), /google_failed/);
+  // A fresh sign-in redeems once inside the app, then the code is spent.
+  const again = await request(`/google/start?app_challenge=${challenge}`);
+  const againCookie = again.headers.getSetCookie().find(value => value.startsWith('google_oauth=')).split(';')[0];
+  const againState = jwt.verify(decodeURIComponent(againCookie.split('=')[1]), process.env.JWT_SECRET);
+  googlePayload = { ...googlePayload, nonce: againState.nonce };
+  const page2 = await (await request(`/google/callback?state=${againState.state}&code=code`, undefined, againCookie)).text();
+  const code2 = page2.match(/code=([\w-]+)/)[1];
+  const ok = await request(`/app-login?code=${code2}&verifier=${verifier}&next=/home`);
+  assert.equal(ok.headers.get('location'), 'http://localhost:5173/home'); assert.ok(cookie(ok));
+  const replay = await request(`/app-login?code=${code2}&verifier=${verifier}`);
+  assert.match(replay.headers.get('location'), /google_failed/);
+  // Bad codes never redirect off the shop's own website.
+  const evil = await request('/app-login?code=x&verifier=y&next=//evil.example');
+  assert.equal(evil.headers.get('location'), 'http://localhost:5173/login?authError=google_failed');
+});
 test('random and tampered reset tokens never change the account password', async () => {
   const original = users[0].password;
   for (const token of [newToken(), { $gt: '' }, 'bad']) assert.equal((await request('/reset-password', { token, password: 'replacement-password' })).status, 400);

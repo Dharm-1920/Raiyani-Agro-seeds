@@ -12,3 +12,8 @@ export const SHOP = {
   lat: 21.965497, lng: 70.7824264,
   mapsUrl: 'https://maps.app.goo.gl/9snMhFuRDhsGDD2w5',
 };
+
+// Android app: bump LATEST_APP_VERSION whenever a new APK is published so older installs see an update message.
+// Versions below FIRST_RELEASE_SIGNED_VERSION used a temporary signing key and must be removed before installing.
+export const LATEST_APP_VERSION = '1.2.0';
+export const FIRST_RELEASE_SIGNED_VERSION = '1.2.0';

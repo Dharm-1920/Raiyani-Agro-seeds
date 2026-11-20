@@ -4,14 +4,17 @@ import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from
 import { useAuth, useCart } from './context';
 import { SHOP } from './config';
 import { Home, Shop, Product, Cart, Checkout, MyOrders, Contact, Account } from './pages';
-import Admin, { AdminLogin } from './admin';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+// Admin, counter billing and bookkeeping load only when an administrator opens them.
+const Admin = lazy(() => import('./admin'));
+const AdminLogin = lazy(() => import('./admin').then(module => ({ default: module.AdminLogin })));
 import Icon from './icons';
 import { animatePage } from './motion';
 import { NotificationBell, NotificationsPage } from './notifications.jsx';
 import { ProfileMenu } from './profile.jsx';
 import { Brand, LanguageSelector, useLanguage } from './language.jsx';
 import { CustomerAuth, ForgotPassword, ResetPassword, VerifyEmail, PrivacyPolicy } from './auth.jsx';
+import AppUpdateBanner from './app-update.jsx';
 function Guard({
   admin,
   children
@@ -28,8 +31,13 @@ function Guard({
   if (admin && user.role !== 'admin') return <Navigate to="/admin/login" replace />;
   return children;
 }
+const PAGE_TITLES = { '/home': 'Home', '/shop': 'Shop', '/about': 'About us', '/our-story': 'Our story', '/our-team': 'Our team', '/blog': 'Blog', '/contact': 'Contact us', '/cart': 'Your cart', '/checkout': 'Checkout', '/orders': 'My orders', '/account': 'My account', '/notifications': 'Notifications', '/login': 'Sign in', '/register': 'Create account', '/admin': 'Admin', '/admin/login': 'Admin sign in' };
+export const shopTitle = (page, language) => {
+  const shop = language === 'gu' ? 'રૈયાણી એગ્રો સીડ્સ, ગોંડલ' : 'Raiyani Agro Seeds, Gondal';
+  return page ? `${page} | ${shop}` : shop;
+};
 export default function App() {
-  useLanguage();
+  const { language } = useLanguage();
   const {
       user,
       ready
@@ -47,6 +55,12 @@ export default function App() {
     setMenu(false);
     if (!loc.hash) window.scrollTo(0, 0);
   }, [loc.pathname, loc.search, loc.hash]);
+  // Product pages set their own title once the product has loaded.
+  useEffect(() => {
+    if (loc.pathname.startsWith('/product/')) return;
+    const page = PAGE_TITLES[loc.pathname];
+    document.title = shopTitle(page && tr(page), language);
+  }, [loc.pathname, language]);
   useEffect(() => {
     if (!menu) return;
     const close = event => {
@@ -69,6 +83,7 @@ export default function App() {
   const showStore = !adminArea && !authArea && !coverArea;
   if (!ready) return <p className="center" role="status">{tr("Checking your account\u2026")}</p>;
   return <>
+      <AppUpdateBanner />
       {tr(showStore && <>
       <div className="announcement">{tr("Rooted in Gondal. Growing with you. ")}<span>{tr("Free delivery on orders \u20B9500 and above")}</span></div>
       <a className="skip-link" href="#content">{tr("Skip to content")}</a>
@@ -116,8 +131,8 @@ export default function App() {
           <Route path="/products" element={<Navigate to="/shop" replace />} />
           <Route path="/q-a-contact-us" element={<Navigate to="/contact" replace />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<Guard admin><Admin /></Guard>} />
+          <Route path="/admin/login" element={<Suspense fallback={<p className="center" role="status">{tr("Loading…")}</p>}><AdminLogin /></Suspense>} />
+          <Route path="/admin" element={<Guard admin><Suspense fallback={<p className="center" role="status">{tr("Loading…")}</p>}><Admin /></Suspense></Guard>} />
           <Route path="*" element={<p className="center">{tr("Page not found. ")}<Link to="/">{tr("Go home")}</Link></p>} />
         </Routes>
       </main>

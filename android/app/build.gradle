@@ -6,6 +6,12 @@ plugins {
 def firebaseConfigured = file('google-services.json').exists()
 if (firebaseConfigured) apply plugin: 'com.google.gms.google-services'
 
+// Release signing key lives outside the project (never commit it). Back up that folder safely:
+// losing it means existing installs can no longer be updated.
+def signingProps = new Properties()
+def signingFile = file(System.getenv('RAIYANI_SIGNING_PROPERTIES') ?: "${System.getProperty('user.home')}/raiyani-app-signing/keystore.properties")
+if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+
 android {
     namespace 'com.raiyani.agroseeds'
     compileSdk 35
@@ -14,9 +20,25 @@ android {
         applicationId 'com.raiyani.agroseeds'
         minSdk 23
         targetSdk 35
-        versionCode 3
-        versionName '1.1.1'
+        versionCode 4
+        versionName '1.2.0'
         buildConfigField 'boolean', 'FIREBASE', "${firebaseConfigured}"
+    }
+    signingConfigs {
+        release {
+            if (signingProps.storeFile) {
+                storeFile file(signingProps.storeFile)
+                storePassword signingProps.storePassword
+                keyAlias signingProps.keyAlias
+                keyPassword signingProps.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingProps.storeFile ? signingConfigs.release : null
+        }
     }
     buildFeatures {
         buildConfig true
@@ -25,4 +47,5 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-messaging:24.1.0'
+    implementation 'androidx.browser:browser:1.8.0'
 }

@@ -36,9 +36,16 @@ app.use('/api/admin/bookkeeping', require('./routes/bookkeeping'));
 app.use('/api/admin/counter-customers', require('./routes/counter-customers'));
 app.use('/api/admin/account-book', require('./routes/account-book'));
 app.post('/api/contact', require('./middleware').protect, rateLimit({ windowMs: 60 * 60 * 1000, limit: 10 }), async (req, res) => {
-  const { name, email, message } = req.body;
-  if (!name || !email || !message) return res.status(400).json({ message: 'All fields required' });
-  await Message.create({ user: req.user._id, name, email, message }); res.status(201).json({ ok: true });
+  // Farmers often have a phone number but no email, so either one is accepted.
+  const { normalizePhone, normalizeEmail } = require('./services/identity');
+  const text = value => typeof value === 'string' ? value.trim() : '';
+  const name = text(req.body.name).slice(0, 120), message = text(req.body.message).slice(0, 4000);
+  const contact = text(req.body.contact || req.body.email || req.body.phone);
+  const email = contact.includes('@') ? normalizeEmail(contact) : '';
+  const phone = email ? null : normalizePhone(contact);
+  if (!name || !message || !contact) return res.status(400).json({ message: 'All fields required' });
+  if (contact.includes('@') ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) : !phone) return res.status(400).json({ message: 'Enter a valid phone number or email address.' });
+  await Message.create({ user: req.user._id, name, message, ...(email ? { email } : { phone }) }); res.status(201).json({ ok: true });
 });
 app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 if (process.env.SERVE_CLIENT === 'true') app.use(require('./frontend')());

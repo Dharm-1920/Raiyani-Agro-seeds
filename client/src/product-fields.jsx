@@ -35,6 +35,7 @@ export default function ProductFields({ form, setForm, categoryField }) {
         {field('mrp', 'MRP (₹)', '0.00', 'Printed maximum retail price.', true)}
         {field('stock', 'Stock quantity', '0', 'Number of units available to sell.')}
       </div>
+      {hasPrice && mrp > 0 && mrp < price && <p className="err" role="alert">{tr('MRP cannot be lower than the selling price. Check both prices.')}</p>}
       <output className="product-price-preview" aria-live="polite"><span><Icon name="eye" size={20} />{tr('Price preview')}</span><div>{hasPrice ? <><strong>{money(price)}</strong><span> / {form.unit || tr('unit')}</span>{mrp > price && <del>{money(mrp)}</del>}{savings > 0 && <b>{savings}% {tr('off')}</b>}</> : <span>{tr('Enter a selling price to see the preview.')}</span>}</div></output>
     </section>
   </div>;

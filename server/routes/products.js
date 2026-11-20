@@ -31,12 +31,15 @@ const fields = (b) => {
   if (b.isActive !== undefined) o.isActive = b.isActive === true || b.isActive === 'true';
   return o;
 };
+// MRP is the printed maximum price, so it can never be below the selling price (an empty MRP is fine).
+const mrpError = p => Number(p.mrp) > 0 && Number(p.mrp) < Number(p.price) ? `MRP (₹${p.mrp}) cannot be lower than the selling price (₹${p.price}). Check both prices.` : null;
 router.post('/', protect, adminOnly, upload.array('images', 5), async (req, res) => {
   let images;
   try {
     const draft = new Product(fields(req.body));
     const validation = draft.validateSync();
     if (validation) return res.status(400).json({ message: validation.message });
+    if (mrpError(draft)) return res.status(400).json({ message: mrpError(draft) });
     const data = draft.toObject();
     const gujarati = await gujaratiFields({ ...data, ...Object.fromEntries(['nameGu', 'descriptionGu', 'categoryGu', 'unitGu'].filter(k => req.body[k] !== undefined).map(k => [k, req.body[k]])) });
     images = await storeImages(req.files);
@@ -53,8 +56,11 @@ router.put('/:id', protect, adminOnly, upload.array('images', 5), async (req, re
   try {
   const p = await Product.findById(req.params.id);
   if (!p || p.isDeleted) return res.status(404).json({ message: 'Product not found' });
+  const changes = fields(req.body);
+  const priceCheck = mrpError({ price: changes.price ?? p.price, mrp: changes.mrp ?? p.mrp });
+  if (priceCheck) return res.status(400).json({ message: priceCheck });
   const gujarati = await gujaratiFields(req.body, p);
-  Object.assign(p, fields(req.body));
+  Object.assign(p, changes);
   Object.assign(p, gujarati);
   if (req.files?.length) { images = await storeImages(req.files); p.images = images; }
   await p.save();

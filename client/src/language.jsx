@@ -35,7 +35,7 @@ const listeners=new Set();
 const subscribe=listener=>{listeners.add(listener);return ()=>listeners.delete(listener);};
 const snapshot=()=>language;
 function applyLanguage(){
-  document.documentElement.lang=language;document.title=language==='gu'?'રૈયાણી એગ્રો સીડ્સ':'Raiyani Agro Seeds';
+  document.documentElement.lang=language; // Page titles are set per page in App.jsx.
   // The Android app shows phone notifications in the language chosen on the website.
   try { window.RaiyaniApp?.setLanguage?.(language); } catch { /* Not running inside the Android app. */ }
 }
