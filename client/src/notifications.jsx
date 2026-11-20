@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './context';
 import api from './api';
 import { tr, useLanguage } from './language.jsx';
@@ -64,7 +64,9 @@ export function NotifyButton({ product }) {
   const [preferences, setPreferences] = useState(false), [whatsapp, setWhatsApp] = useState(false), [phone, setPhone] = useState(user?.phone || '');
   const subscribed = subscriptions.includes(product._id);
   const { language } = useLanguage();
+  const navigate = useNavigate(), location = useLocation();
   const toggle = async () => {
+    if (!user) { navigate('/login', { state: { from: location.pathname + location.search } }); return; }
     if (!subscribed && whatsappRestockAvailable && !preferences) { setPhone(user?.phone || ''); setPreferences(true); return; }
     setBusy(true); setError('');
     try { await write(subscribed ? 'delete' : 'post', `/subscriptions/${product._id}`, { language, ...(!subscribed && whatsapp ? { whatsapp: true, whatsappPhone: phone, whatsappConsent: true } : {}) }); setPreferences(false); }

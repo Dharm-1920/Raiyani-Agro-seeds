@@ -66,7 +66,7 @@ export default function App() {
   const adminArea = loc.pathname.startsWith('/admin');
   const authArea = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/privacy'].includes(loc.pathname);
   const coverArea = ['/', '/welcome'].includes(loc.pathname);
-  const showStore = Boolean(user) && !adminArea && !authArea && !coverArea;
+  const showStore = !adminArea && !authArea && !coverArea;
   if (!ready) return <p className="center" role="status">{tr("Checking your account\u2026")}</p>;
   return <>
       {tr(showStore && <>
@@ -78,7 +78,7 @@ export default function App() {
           e.preventDefault();
           navigate('/shop?search=' + encodeURIComponent(search.trim()));
         }}><Icon name="search" size={17} /><input aria-label={tr("Search the shop")} placeholder={tr("What does your farm need?")} value={search} onChange={e => setSearch(e.target.value)} /><button aria-label={tr("Submit search")}><Icon name="arrow" size={17} /></button></form>
-        <NotificationBell /><ProfileMenu /><button className="menu-button" aria-label={tr("Toggle navigation")} aria-controls="store-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><span className="menu-lines" aria-hidden="true"><i /><i /><i /></span></button></div>
+        <NotificationBell /><ProfileMenu />{!user && <Link className="header-sign-in" to="/login" state={{ from: loc.pathname + loc.search }}><Icon name="user" size={17} /><span>{tr("Sign in")}</span></Link>}<button className="menu-button" aria-label={tr("Toggle navigation")} aria-controls="store-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><span className="menu-lines" aria-hidden="true"><i /><i /><i /></span></button></div>
         <nav id="store-navigation" className={menu ? "open" : ""}>
           <LanguageSelector /><NavLink to="/home" end>{tr("Home")}</NavLink>
           <NavLink to="/shop">{tr("Shop")}</NavLink>
@@ -93,8 +93,8 @@ export default function App() {
         {tr(user && cartError && <div className="err" role="alert">{tr(cartError)} <button className="link" onClick={retryCart}>{tr("Retry cart")}</button></div>)}
         <Routes>
           <Route path="/" element={<Welcome />} />
-          <Route path="/shop" element={<Guard><Shop /></Guard>} />
-          <Route path="/product/:id" element={<Guard><Product /></Guard>} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:id" element={<Product />} />
           <Route path="/cart" element={<Guard><Cart /></Guard>} />
           <Route path="/checkout" element={<Guard><Checkout /></Guard>} />
           <Route path="/orders" element={<Guard><MyOrders /></Guard>} />
@@ -106,16 +106,16 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/account" element={<Guard><Account /></Guard>} />
-          <Route path="/about" element={<Guard><About /></Guard>} />
-          <Route path="/our-story" element={<Guard><Story /></Guard>} />
-          <Route path="/our-team" element={<Guard><Team /></Guard>} />
-          <Route path="/blog" element={<Guard><Blog /></Guard>} />
-          <Route path="/post/gardening-solutions-seeds-pesticides-and-equipment-online" element={<Guard><BlogPost /></Guard>} />
+          <Route path="/about" element={<About />} />
+          <Route path="/our-story" element={<Story />} />
+          <Route path="/our-team" element={<Team />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/post/gardening-solutions-seeds-pesticides-and-equipment-online" element={<BlogPost />} />
           <Route path="/welcome" element={<Navigate to="/" replace />} />
-          <Route path="/home" element={<Guard><Home /></Guard>} />
+          <Route path="/home" element={<Home />} />
           <Route path="/products" element={<Navigate to="/shop" replace />} />
           <Route path="/q-a-contact-us" element={<Navigate to="/contact" replace />} />
-          <Route path="/contact" element={<Guard><Contact /></Guard>} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Guard admin><Admin /></Guard>} />
           <Route path="*" element={<p className="center">{tr("Page not found. ")}<Link to="/">{tr("Go home")}</Link></p>} />

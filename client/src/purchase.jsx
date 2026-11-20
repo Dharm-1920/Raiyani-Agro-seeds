@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useCart } from './context';
 import { productText, tr } from './language.jsx';
 import Icon from './icons';
@@ -57,8 +57,9 @@ function animateCartAdd(button, quantity) {
 export function ProductPurchase({ product, compact = false }) {
   const { user } = useAuth();
   const { add, items, ready } = useCart();
-  const navigate = useNavigate();
+  const navigate = useNavigate(), location = useLocation();
   const [qty, setQty] = useState(1), [added, setAdded] = useState(0);
+  const signIn = () => navigate('/login', { state: { from: location.pathname + location.search } });
   const stock = Math.max(0, Math.min(10000, Math.floor(Number(product.stock) || 0)));
   const quantity = Math.min(qty, stock);
   const inCart = items.find(item => item.id === product._id)?.qty || 0;
@@ -72,6 +73,13 @@ export function ProductPurchase({ product, compact = false }) {
     id: product._id, name: product.name, nameGu: product.nameGu, price: product.price,
     image: product.images?.[0], stock, qty: quantity,
   } } } });
+  if (!user) return <div className={`product-purchase${compact ? ' compact' : ''}`}>
+    <div className="purchase-buttons">
+      <button type="button" className="purchase-add" disabled={!stock} onClick={signIn}><Icon name="bag" size={18} />{tr('Add to cart')}</button>
+      <button type="button" className="purchase-buy" disabled={!stock} onClick={signIn}>{tr('Buy now')}<Icon name="arrow" size={17} /></button>
+    </div>
+    <span className="purchase-feedback">{tr('Sign in to order. Your cart is saved to your account.')}</span>
+  </div>;
   return <div className={`product-purchase${compact ? ' compact' : ''}`}>
     <QuantityControl value={quantity || 1} max={stock} disabled={!ready || !stock} onChange={setQty} name={productText(product)} />
     <div className="purchase-buttons">
