@@ -34,7 +34,11 @@ try { if (localStorage.getItem(key)==='gu') language='gu'; } catch { /* Browser 
 const listeners=new Set();
 const subscribe=listener=>{listeners.add(listener);return ()=>listeners.delete(listener);};
 const snapshot=()=>language;
-function applyLanguage(){document.documentElement.lang=language;document.title=language==='gu'?'રૈયાણી એગ્રો સીડ્સ':'Raiyani Agro Seeds';}
+function applyLanguage(){
+  document.documentElement.lang=language;document.title=language==='gu'?'રૈયાણી એગ્રો સીડ્સ':'Raiyani Agro Seeds';
+  // The Android app shows phone notifications in the language chosen on the website.
+  try { window.RaiyaniApp?.setLanguage?.(language); } catch { /* Not running inside the Android app. */ }
+}
 if(typeof document!=='undefined')applyLanguage();
 export function setLanguage(value){
   if(!['en','gu'].includes(value) || value===language)return;

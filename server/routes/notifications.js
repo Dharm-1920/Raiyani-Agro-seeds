@@ -32,6 +32,13 @@ router.put('/read-purchases', handle(async (req, res) => {
   await Notification.updateMany({ user: req.user._id, isRead: false, type: 'purchase', eventKey: { $in: ids.map(id => `purchase:${id}`) } }, { $set: { isRead: true } });
   res.json({ ok: true });
 }));
+// The Android app registers its Firebase token here so new notifications reach the phone instantly.
+router.post('/devices', require('express-rate-limit')({ windowMs: 3600000, limit: 30 }), handle(async (req, res) => {
+  const push = require('../services/push');
+  try { await push.registerDevice(req.user._id, req.body.token); }
+  catch (error) { return res.status(error.status || 500).json({ message: error.status ? error.message : 'Device could not be registered.' }); }
+  res.status(201).json({ ok: true, instant: push.configured() });
+}));
 router.put('/read-all', handle(async (req, res) => {
   await Notification.updateMany({ user: req.user._id, isRead: false }, { $set: { isRead: true } });
   res.json({ ok: true });

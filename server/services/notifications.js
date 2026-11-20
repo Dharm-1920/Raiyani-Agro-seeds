@@ -2,9 +2,15 @@ const { Notification, StockSubscription, Product, Order, User } = require('../mo
 
 // Stable event keys make retries safe, including a crash after insertion.
 async function send(user, eventKey, data) {
+  let result;
   try {
-    await Notification.updateOne({ user, eventKey }, { $setOnInsert: { user, eventKey, ...data } }, { upsert: true });
+    result = await Notification.updateOne({ user, eventKey }, { $setOnInsert: { user, eventKey, ...data } }, { upsert: true });
   } catch (error) { if (error.code !== 11000) throw error; }
+  // Only brand-new notifications go to the phone, so retries never alert twice.
+  if (result?.upsertedCount) {
+    const push = require('./push');
+    if (push.configured()) await push.pushToUser(user, { _id: result.upsertedId, eventKey, ...data });
+  }
 }
 async function notifyRestockedProduct(product) {
   // Re-read current availability: an archived product must never send a restock alert.

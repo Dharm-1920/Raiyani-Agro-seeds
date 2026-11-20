@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon: a white sprout (Android tints it). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M11.2,21.5V13.4C7.3,13.3 4.6,10.7 4.2,6.3C8.1,6.2 10.9,8.3 11.4,11.9C11.9,7.4 14.6,4.2 19.8,3.6C20,8.6 17.1,12 12.8,12.4V21.5Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M6,21.5h12v1.5h-12z" />
+</vector>

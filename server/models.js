@@ -127,6 +127,13 @@ const notificationSchema = new Schema({
 notificationSchema.index({ user: 1, eventKey: 1 }, { unique: true });
 notificationSchema.index({ user: 1, createdAt: -1 });
 const Notification = mongoose.model('Notification', notificationSchema);
+// One row per Android app installation that can receive instant (Firebase) notifications.
+const deviceTokenSchema = new Schema({
+  token: { type: String, required: true, unique: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  platform: { type: String, enum: ['android'], default: 'android' },
+}, { timestamps: true });
+const DeviceToken = mongoose.model('DeviceToken', deviceTokenSchema);
 const subscriptionSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -183,4 +190,4 @@ const restockDeliverySchema = new Schema({
 restockDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
 const RestockDelivery = mongoose.model('RestockDelivery', restockDeliverySchema);
 [InvoiceDelivery, PaymentReminder, RestockDelivery].forEach(model => model.schema.add({ deliveryStatus: String, deliveryTimestamp: Number, deliveryRank: Number }));
-module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, StockSubscription, ProductImage, AuthToken, InvoiceDelivery, WhatsAppPreference, RestockDelivery };
+module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, DeviceToken, StockSubscription, ProductImage, AuthToken, InvoiceDelivery, WhatsAppPreference, RestockDelivery };

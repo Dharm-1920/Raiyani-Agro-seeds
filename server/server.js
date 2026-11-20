@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const { Message, User, AuthToken, InvoiceDelivery, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, RestockDelivery, WhatsAppPreference, StockSubscription } = require('./models');
+const { Message, User, AuthToken, InvoiceDelivery, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, RestockDelivery, WhatsAppPreference, StockSubscription, DeviceToken } = require('./models');
 if (!process.env.JWT_SECRET) { console.error('JWT_SECRET missing in .env'); process.exit(1); }
 const app = express();
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
@@ -46,7 +46,7 @@ app.use((req, res) => res.status(404).json({ message: 'Not found' }));
 app.use((err, req, res, next) => { console.error(err); res.status(err.status || 500).json({ message: err.message || 'Server error' }); });
 process.on('unhandledRejection', (e) => console.error(e));
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  await Promise.all([User.init(), AuthToken.init(), InvoiceDelivery.init(), CounterBill.init(), CounterCustomer.init(), Expense.init(), JournalEntry.init(), PaymentReminder.init(), RestockDelivery.init(), WhatsAppPreference.init(), StockSubscription.init()]);
+  await Promise.all([User.init(), AuthToken.init(), InvoiceDelivery.init(), CounterBill.init(), CounterCustomer.init(), Expense.init(), JournalEntry.init(), PaymentReminder.init(), RestockDelivery.init(), WhatsAppPreference.init(), StockSubscription.init(), DeviceToken.init()]);
   require('./services/notifications').startNotificationWorker();
   require('./services/invoice-delivery').startWorker();
   require('./services/payment-reminders').startWorker();
