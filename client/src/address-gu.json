@@ -48,5 +48,21 @@
   "Address not found.": "સરનામું મળ્યું નથી.",
   "Invalid address ID.": "સરનામાની ઓળખ અમાન્ય છે.",
   "Choose a delivery address before placing your order.": "ઓર્ડર કરતાં પહેલાં ડિલિવરીનું સરનામું પસંદ કરો.",
-  "Your addresses changed. Refresh checkout and choose an address again.": "તમારાં સરનામાં બદલાયાં છે. ચેકઆઉટ ફરી લોડ કરીને સરનામું ફરી પસંદ કરો."
+  "Your addresses changed. Refresh checkout and choose an address again.": "તમારાં સરનામાં બદલાયાં છે. ચેકઆઉટ ફરી લોડ કરીને સરનામું ફરી પસંદ કરો.",
+  "Use my current location": "મારું હાલનું લોકેશન વાપરો",
+  "Finding your location…": "તમારું લોકેશન શોધી રહ્યા છીએ…",
+  "Your browser will ask permission to use GPS.": "તમારું બ્રાઉઝર GPS વાપરવાની પરવાનગી માંગશે.",
+  "Address filled from your location. Add your house or flat number and check every field before saving.": "તમારા લોકેશન પરથી સરનામું ભરાયું છે. સાચવતાં પહેલાં ઘર અથવા ફ્લેટ નંબર ઉમેરો અને બધી વિગતો તપાસો.",
+  "Your browser does not support location access. Please enter your address manually.": "તમારું બ્રાઉઝર લોકેશન સપોર્ટ કરતું નથી. કૃપા કરીને સરનામું જાતે લખો.",
+  "Location access needs a secure (https) website. Please enter your address manually.": "લોકેશન માટે સુરક્ષિત (https) વેબસાઇટ જરૂરી છે. કૃપા કરીને સરનામું જાતે લખો.",
+  "Location permission was denied. Allow location access for this site in your browser settings, or enter your address manually.": "લોકેશનની પરવાનગી નકારી છે. બ્રાઉઝર સેટિંગ્સમાં આ સાઇટ માટે લોકેશન ચાલુ કરો, અથવા સરનામું જાતે લખો.",
+  "Finding your location took too long. Please try again.": "લોકેશન શોધવામાં વધુ સમય લાગ્યો. ફરી પ્રયાસ કરો.",
+  "Your location could not be found. Turn on GPS / location services and try again.": "તમારું લોકેશન મળ્યું નથી. GPS / લોકેશન ચાલુ કરીને ફરી પ્રયાસ કરો.",
+  "Your location could not be read. Please try again.": "તમારું લોકેશન વાંચી શકાયું નથી. ફરી પ્રયાસ કરો.",
+  "No address was found at your location. Please enter it manually.": "તમારા લોકેશન પર કોઈ સરનામું મળ્યું નથી. કૃપા કરીને જાતે લખો.",
+  "Your location is outside India. We deliver only within India.": "તમારું લોકેશન ભારતની બહાર છે. અમે ફક્ત ભારતમાં જ ડિલિવરી કરીએ છીએ.",
+  "Too many location lookups. Please wait a minute and try again.": "લોકેશન ઘણી વાર શોધાયું છે. એક મિનિટ રાહ જોઈને ફરી પ્રયાસ કરો.",
+  "The address lookup service is unreachable. Please enter your address manually.": "સરનામું શોધવાની સેવા સુધી પહોંચી શકાતું નથી. કૃપા કરીને સરનામું જાતે લખો.",
+  "The address lookup service is unavailable. Please enter your address manually.": "સરનામું શોધવાની સેવા હાલ ઉપલબ્ધ નથી. કૃપા કરીને સરનામું જાતે લખો.",
+  "Your address could not be found. Please enter it manually.": "તમારું સરનામું મળ્યું નથી. કૃપા કરીને જાતે લખો."
 }

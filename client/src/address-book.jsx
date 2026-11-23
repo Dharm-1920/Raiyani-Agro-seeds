@@ -15,6 +15,28 @@ function AddressEditor({ address, user, isDefault, first, onSave, onCancel }) {
   const dialog = useRef(null), heading = useId();
   const [form, setForm] = useState({ ...blank, name: user.name, phone: user.phone || '', ...address });
   const [makeDefault, setMakeDefault] = useState(first || isDefault), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [locating, setLocating] = useState(false), [locateError, setLocateError] = useState(''), [locateNote, setLocateNote] = useState('');
+  // Asks the browser for GPS permission, then fills the form from the server's address lookup.
+  const fillFromLocation = () => {
+    setLocateError(''); setLocateNote('');
+    if (!('geolocation' in navigator)) return setLocateError('Your browser does not support location access. Please enter your address manually.');
+    if (!window.isSecureContext) return setLocateError('Location access needs a secure (https) website. Please enter your address manually.');
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(async position => {
+      try {
+        const { data } = await api.get('/account/addresses/locate', { params: { lat: position.coords.latitude, lon: position.coords.longitude } });
+        const found = Object.fromEntries(Object.entries(data.address || {}).filter(([, value]) => value));
+        setForm(current => ({ ...current, ...found }));
+        setLocateNote('Address filled from your location. Add your house or flat number and check every field before saving.');
+      } catch (lookupError) { setLocateError(errMsg(lookupError)); }
+      finally { setLocating(false); }
+    }, positionError => {
+      setLocating(false);
+      setLocateError(positionError.code === 1 ? 'Location permission was denied. Allow location access for this site in your browser settings, or enter your address manually.'
+        : positionError.code === 3 ? 'Finding your location took too long. Please try again.'
+        : 'Your location could not be found. Turn on GPS / location services and try again.');
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
+  };
   useEffect(() => {
     const element = dialog.current, previous = document.activeElement;
     element.showModal();
@@ -30,6 +52,8 @@ function AddressEditor({ address, user, isDefault, first, onSave, onCancel }) {
     <div className="address-editor-heading"><div><span className="eyebrow">{tr('YOUR DELIVERIES')}</span><h2 id={heading}>{tr(address ? 'Edit address' : 'Add a new address')}</h2></div><button type="button" className="address-dialog-close" aria-label={tr('Close address form')} disabled={busy} onClick={onCancel}>×</button></div>
     <form onSubmit={submit}><fieldset disabled={busy}>
       <div className="address-label-choices" role="group" aria-label={tr('Address label')}>{['Home', 'Work', 'Other'].map(label => <button type="button" key={label} aria-pressed={form.label === label} onClick={() => setForm({ ...form, label })}>{labelText(label)}</button>)}</div>
+      <div className="address-locate"><button type="button" className="secondary address-locate-button" disabled={locating} aria-busy={locating} onClick={fillFromLocation}><Icon name="locate" size={18} />{tr(locating ? 'Finding your location…' : 'Use my current location')}</button><small>{tr('Your browser will ask permission to use GPS.')}</small>
+        {locateError && <p className="err" role="alert">{tr(locateError)}</p>}{locateNote && <p className="ok" role="status">{tr(locateNote)}</p>}</div>
       <div className="address-editor-grid">{field('name', 'Full name', 'shipping name', true, 120)}{field('phone', 'Phone', 'shipping tel', true, 40)}{field('postalCode', 'PIN code', 'shipping postal-code', true, 6)}{field('city', 'Town / City', 'shipping address-level2', true, 100)}</div>
       {field('line1', 'Flat, house number, building, street', 'shipping address-line1', true, 1000)}
       {field('line2', 'Area, colony or village', 'shipping address-line2', false)}

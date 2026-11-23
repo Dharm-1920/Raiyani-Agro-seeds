@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -23,8 +24,11 @@ public class MainActivity extends Activity {
     private static final String KEY_GOOGLE_VERIFIER = "google_verifier";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 1002;
+    private static final int LOCATION_PERMISSION_REQUEST = 1003;
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    private GeolocationPermissions.Callback locationCallback;
+    private String locationOrigin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +44,7 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(true);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setGeolocationEnabled(true);
         settings.setUserAgentString(settings.getUserAgentString() + " RaiyaniAgroSeedsApp/" + BuildConfig.VERSION_NAME);
 
         CookieManager.getInstance().setAcceptCookie(true);
@@ -98,6 +103,25 @@ public class MainActivity extends Activity {
                     return false;
                 }
                 return true;
+            }
+
+            // "Use my current location" on the address form: only the shop website may ask,
+            // and Android shows its own permission dialog the first time.
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                Uri uri = Uri.parse(origin);
+                if (!SHOP_HOST.equals(uri.getHost()) || !"https".equalsIgnoreCase(uri.getScheme())) {
+                    callback.invoke(origin, false, false);
+                    return;
+                }
+                if (hasLocationPermission()) {
+                    callback.invoke(origin, true, false);
+                    return;
+                }
+                if (locationCallback != null) locationCallback.invoke(locationOrigin, false, false);
+                locationCallback = callback;
+                locationOrigin = origin;
+                requestPermissions(new String[] { "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION" }, LOCATION_PERMISSION_REQUEST);
             }
         });
         webView.setBackgroundColor(0xFFF7F5EF);
@@ -194,6 +218,21 @@ public class MainActivity extends Activity {
         if (AppNotifications.prefs(this).getBoolean("permission_asked", false)) return;
         AppNotifications.prefs(this).edit().putBoolean("permission_asked", true).apply();
         requestPermissions(new String[] { "android.permission.POST_NOTIFICATIONS" }, NOTIFICATION_PERMISSION_REQUEST);
+    }
+
+    private boolean hasLocationPermission() {
+        return checkSelfPermission("android.permission.ACCESS_FINE_LOCATION") == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission("android.permission.ACCESS_COARSE_LOCATION") == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != LOCATION_PERMISSION_REQUEST || locationCallback == null) return;
+        // Not retained, so the website's error message appears if the customer denies access.
+        locationCallback.invoke(locationOrigin, hasLocationPermission(), false);
+        locationCallback = null;
+        locationOrigin = null;
     }
 
     @Override

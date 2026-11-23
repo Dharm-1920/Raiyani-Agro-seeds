@@ -244,3 +244,6 @@ html[lang="gu"] .hero h1{font-size:58px;line-height:1.4}html[lang="gu"] .nav .ra
 .contact-quick-whatsapp{background:#eef8f0!important;border-color:#bfdcc6!important}.contact-quick-whatsapp svg{color:#25a35a}.contact-quick-whatsapp:hover{background:#dff2e4!important}
 .contact-quick-call svg{color:var(--g)}.contact-quick-call:hover{border-color:#b9c7aa}
 @media(prefers-reduced-motion:reduce){.delivery-bar i,.contact-quick a{transition:none}.contact-quick a:hover{transform:none}}
+
+/* Phone: the 'Find us' footer column gets the full width so the address and email don't break mid-word */
+@media(max-width:760px){.footer-inner>div:last-child{grid-column:1/-1}.foot .shop-details a{overflow-wrap:anywhere}}

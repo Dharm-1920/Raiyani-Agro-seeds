@@ -40,3 +40,6 @@
 .stock-status{display:inline-flex;align-items:center;gap:7px;margin:4px 0 10px;font-size:14px;font-weight:600;color:#2f6b3f}
 .stock-status:before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
 .stock-status.low{color:#a5650b}
+
+/* Phone: product-card buttons fill the card evenly */
+@media(max-width:600px){.card .compact .purchase-buttons{justify-items:stretch}.card .compact .purchase-buttons button{width:100%;min-height:40px}}

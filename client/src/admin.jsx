@@ -89,7 +89,8 @@ export function AdminLogin() {
       password: ''
     }),
     [error, setError] = useState(''),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [showPassword, setShowPassword] = useState(false);
   if (ready && user?.role === 'admin') return <Navigate to="/admin" replace />;
   const submit = async e => {
     e.preventDefault();
@@ -109,10 +110,10 @@ export function AdminLogin() {
   return <div className="admin-login"><aside><Link to="/" className="admin-logo"><Brand large /></Link><span className="eyebrow">{tr("THE PEOPLE BEHIND THE HARVEST")}</span><h1>{tr("Your shop.")}<br />{tr("All in one place.")}</h1><p>{tr("Manage your stock, follow every order and stay close to your customers.")}</p><div className="admin-login-perks"><span><Icon name="bag" />{tr(" Products & inventory")}</span><span><Icon name="truck" />{tr(" Orders & delivery")}</span><span><Icon name="user" />{tr(" Customers & messages")}</span></div></aside><div className="admin-login-form"><form onSubmit={submit}><div className="admin-mobile-brand"><Brand /></div><LanguageSelector /><span className="admin-lock"><Icon name="shield" size={30} /></span><span className="eyebrow">{tr("STORE MANAGEMENT")}</span><h2>{tr("Admin sign in")}</h2><p>{tr("Use your administrator account to continue.")}</p>{tr(user && user.role !== 'admin' && <p className="admin-notice">{tr("Your current account is a customer account. Sign in with an administrator account below.")}</p>)}<label>{tr("Email address")}<input type="email" autoComplete="username" required value={form.email} onChange={e => setForm({
             ...form,
             email: e.target.value
-          })} /></label><label>{tr("Password")}<input type="password" autoComplete="current-password" required value={form.password} onChange={e => setForm({
+          })} /></label><label>{tr("Password")}<span className="admin-password-field"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={form.password} onChange={e => setForm({
             ...form,
             password: e.target.value
-          })} /></label><p><Link to="/forgot-password">{tr('Forgot password?')}</Link></p>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Signing in…' : 'Open admin panel')}<Icon name="arrow" size={18} /></button><Link className="back-to-shop" to="/">{tr("\u2190 Back to the shop")}</Link></form></div></div>;
+          })} /><button type="button" className="admin-password-toggle" aria-label={tr(showPassword ? 'Hide password' : 'Show password')} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><Icon name={showPassword ? 'eyeOff' : 'eye'} size={19} /></button></span></label><p><Link to="/forgot-password">{tr('Forgot password?')}</Link></p>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy}>{tr(busy ? 'Signing in…' : 'Open admin panel')}<Icon name="arrow" size={18} /></button><Link className="back-to-shop" to="/">{tr("\u2190 Back to the shop")}</Link></form></div></div>;
 }
 function Dashboard({
   open
