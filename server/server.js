@@ -1,4 +1,7 @@
 require('dotenv').config();
+// The shop's receiving UPI ID is public (it is printed on every payment QR), so the live site
+// falls back to it when the host has no SHOP_UPI_ID set. A host environment value still wins.
+if (process.env.NODE_ENV === 'production' && !String(process.env.SHOP_UPI_ID || '').trim()) process.env.SHOP_UPI_ID = 'djraiyani5609@okhdfcbank';
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
