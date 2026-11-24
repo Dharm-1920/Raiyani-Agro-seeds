@@ -78,7 +78,7 @@ router.put('/orders/:id/status', async (req, res) => {
     if (orderStatus === 'delivered' && o.paymentMethod === 'cod') o.paymentStatus = 'paid';
   }
 
-  const updated = await Order.findOneAndUpdate({ _id: o._id, orderStatus: originalStatus }, { $set: { orderStatus: o.orderStatus, ...(o.orderStatus === 'delivered' && originalStatus !== 'delivered' ? { deliveryNoticePending: true } : {}), ...(o.paymentMethod === 'cod' && o.orderStatus === 'delivered' ? { paymentStatus: 'paid' } : {}) } }, { new: true });
+  const updated = await Order.findOneAndUpdate({ _id: o._id, orderStatus: originalStatus }, { $set: { orderStatus: o.orderStatus, ...(o.orderStatus === 'delivered' && originalStatus !== 'delivered' ? { deliveryNoticePending: true, deliveredAt: new Date() } : {}), ...(o.paymentMethod === 'cod' && o.orderStatus === 'delivered' ? { paymentStatus: 'paid' } : {}) } }, { new: true });
   if (!updated) return res.status(409).json({ message: 'Order changed. Please refresh before updating it.' });
   await notices.safely(() => notices.processOrderNotifications(updated));
   res.json(updated);

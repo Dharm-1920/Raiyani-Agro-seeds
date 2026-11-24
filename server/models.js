@@ -48,6 +48,7 @@ const Order = mongoose.model('Order', new Schema({
   paymentVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User' }, paymentVerifiedAt: Date,
   refundReference: String, refundVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User' }, refundVerifiedAt: Date,
   cancelledAt: Date, cancelledBy: { type: String, enum: ['customer', 'admin'] },
+  deliveredAt: Date, // cash-on-delivery sales are booked on this date
   stockRestored: { type: Boolean, default: false },
   adminNoticePending: { type: Boolean, default: false },
   deliveryNoticePending: { type: Boolean, default: false },

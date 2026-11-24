@@ -12,10 +12,7 @@ import { Brand, LanguageSelector } from './language.jsx';
 import { SHOP } from './config';
 import InvoiceButton from './invoice.jsx';
 import PaymentStatus from './payment-status.jsx';
-import CounterBills from './counter-bills.jsx';
-import Bookkeeping from './bookkeeping.jsx';
-import DailyRegister from './daily-register.jsx';
-import AccountBook from './account-book.jsx';
+import Accounts, { LEGACY_SECTIONS } from './accounts.jsx';
 import CounterCustomers from './counter-customers.jsx';
 import { refundText } from './payment.jsx';
 import './admin.css';
@@ -425,10 +422,7 @@ const TABS = {
   Dashboard,
   Products,
   Orders,
-  'Daily register': DailyRegister,
-  'Counter bills': CounterBills,
-  Bookkeeping,
-  'Account book': AccountBook,
+  Accounts,
   'Counter customers': CounterCustomers,
   Users,
   Messages
@@ -437,10 +431,7 @@ const icons = {
   Dashboard: 'sun',
   Products: 'leaf',
   Orders: 'bag',
-  'Daily register': 'receipt',
-  'Counter bills': 'bag',
-  Bookkeeping: 'menu',
-  'Account book': 'menu',
+  Accounts: 'receipt',
   'Counter customers': 'user',
   Users: 'user',
   Messages: 'menu'
@@ -449,10 +440,7 @@ const descriptions = {
   Dashboard: 'A clear view of your shop, from stock to sales.',
   Products: 'Your seeds, farm essentials and inventory.',
   Orders: 'Follow each order from checkout to delivery.',
-  'Daily register': 'Every day’s sales, purchases, expenses and cash in one register.',
-  'Counter bills': 'Make, print and share bills for customers at your shop.',
-  Bookkeeping: 'Counter sales, customer dues, receipts and shop expenses.',
-  'Account book': 'Day book, account ledgers, opening balances and accounting entries.',
+  Accounts: 'Sales, purchases, expenses, ledgers and final accounts in one place.',
   'Counter customers': 'Saved customer details and individual customer statements.',
   Users: 'Manage customer accounts and store access.',
   Messages: 'Keep in touch with the people who grow with you.'
@@ -460,7 +448,8 @@ const descriptions = {
 export default function Admin() {
   const { menuCounts = {} } = useNotifications();
   const location = useLocation();
-  const requestedTab = new URLSearchParams(location.search).get('tab');
+  const tabParam = new URLSearchParams(location.search).get('tab');
+  const requestedTab = LEGACY_SECTIONS[tabParam] ? 'Accounts' : tabParam;
   const [tab, setTab] = useState(TABS[requestedTab] ? requestedTab : 'Dashboard'),
     [refresh, setRefresh] = useState(0),
     [error, setError] = useState('');

@@ -77,7 +77,7 @@
 .register-form>button{margin-top:10px;font-size:13px}
 
 .register-kind{display:inline-block;white-space:nowrap;font-size:10px;padding:4px 9px;border-radius:999px;background:#edf0e2;color:#4e6544}
-.register-kind.is-sale,.register-kind.is-receipt{background:#e3ecd4;color:#3f6338}
+.register-kind.is-sale,.register-kind.is-receipt,.register-kind.is-website-sale{background:#e3ecd4;color:#3f6338}
 .register-kind.is-purchase{background:#e5edf3;color:#2f5670}
 .register-kind.is-supplier-payment{background:#efe6f3;color:#5f3f70}
 .register-kind.is-expense{background:#f6e7d5;color:#87522a}

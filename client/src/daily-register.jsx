@@ -11,9 +11,9 @@ const shiftDay = (date, days) => new Date(Date.parse(date + 'T00:00:00Z') + days
 const rupees = cents => money((cents || 0) / 100);
 const signed = cents => cents ? (cents > 0 ? '+' : '−') + rupees(Math.abs(cents)) : '';
 const timeOf = row => row.timeKnown ? new Date(row.at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '—';
-const KINDS = { sale: 'Sale', receipt: 'Customer payment', purchase: 'Purchase', 'supplier-payment': 'Supplier payment', expense: 'Expense', journal: 'Journal' };
+const KINDS = { sale: 'Sale', receipt: 'Customer payment', 'website-sale': 'Website sale', 'website-refund': 'Website refund', purchase: 'Purchase', 'supplier-payment': 'Supplier payment', expense: 'Expense', journal: 'Journal' };
 const MODES = { cash: 'Cash', upi: 'Bank / UPI', card: 'Card', later: 'Credit', credit: 'Credit', journal: '—' };
-const FILTERS = [['all', 'All entries', () => true], ['sales', 'Sales & receipts', row => ['sale', 'receipt'].includes(row.kind)], ['purchases', 'Purchases', row => row.kind === 'purchase'], ['payments', 'Supplier payments', row => row.kind === 'supplier-payment'], ['expenses', 'Expenses', row => row.kind === 'expense'], ['journal', 'Journal', row => row.kind === 'journal']];
+const FILTERS = [['all', 'All entries', () => true], ['sales', 'Sales & receipts', row => ['sale', 'receipt', 'website-sale', 'website-refund'].includes(row.kind)], ['purchases', 'Purchases', row => row.kind === 'purchase'], ['payments', 'Supplier payments', row => row.kind === 'supplier-payment'], ['expenses', 'Expenses', row => row.kind === 'expense'], ['journal', 'Journal', row => row.kind === 'journal']];
 const cents = value => Math.round((Number(value) || 0) * 100);
 const blankItem = () => ({ product: '', name: '', unit: '', qty: '', rate: '', gstPercent: 0 });
 const blanks = {
@@ -167,7 +167,7 @@ export default function DailyRegister({ open }) {
         ['Purchases', s.purchasesCents, `${s.purchasesCount} ${tr(s.purchasesCount === 1 ? 'bill' : 'bills')}` + (s.purchaseTaxCents ? ` · ${tr('GST')} ${rupees(s.purchaseTaxCents)}` : ''), 'truck', 'is-out'],
         ['Paid to suppliers', s.supplierPaidCents, tr('With bills and separate payments'), 'receipt', 'is-out'],
         ['Expenses', s.expensesCents, Object.entries(data.expenseByCategory).map(([category, value]) => `${tr(category)} ${rupees(value)}`).join(' · ') || tr('No expenses'), 'tool', 'is-out'],
-        ['Website orders', s.websiteCents, `${s.websiteOrders} ${tr(s.websiteOrders === 1 ? 'order' : 'orders')} · ${tr('tracked in Orders')}`, 'grid', ''],
+        ['Website sales', s.websiteCents, `${s.websiteOrders} ${tr(s.websiteOrders === 1 ? 'order' : 'orders')} · ${tr('UPI verified or COD delivered')}`, 'grid', 'is-in'],
       ].map(([label, value, hint, icon, tone]) => <div key={label} className={tone}><span><small>{tr(label)}</small><Icon name={icon} size={18} /></span><b>{rupees(value)}</b><p>{hint}</p></div>)}</div>
       <section className="register-books"><CashCard title="Cash in hand" icon="cash" book={data.cash} /><CashCard title="Bank / UPI" icon="qr" book={data.bank} /><DayClose key={date + (data.dayClose?.updatedAt || '')} date={date} data={data} onSaved={saved} /></section>
       <p className="register-dues"><span>{tr('Customers owe you')}: <b>{rupees(s.customerDuesCents)}</b></span><span>{tr('You owe suppliers')}: <b>{rupees(s.supplierDuesCents)}</b></span></p>
@@ -184,9 +184,9 @@ export default function DailyRegister({ open }) {
         <td>{timeOf(row)}</td><td><span className={'register-kind is-' + row.kind}>{tr(KINDS[row.kind])}</span></td><td><BookReference value={row.reference} />{row.billNumber && <small>{tr('Bill no.')} {row.billNumber}</small>}</td><td>{row.party ? tr(row.party) : '—'}</td><td className="register-details">{tr(row.details)}{row.voided && <small className="register-void-reason">{tr('Cancelled')}: {row.voidReason}</small>}</td>
         <td><b>{rupees(row.amountCents)}</b>{row.taxCents > 0 && <small>{tr('incl. GST')} {rupees(row.taxCents)}</small>}</td><td>{row.kind === 'journal' ? '—' : rupees(row.settledCents)}</td><td>{tr(MODES[row.mode] || row.mode)}</td>
         <td className={row.cashCents > 0 ? 'register-plus' : row.cashCents < 0 ? 'register-minus' : ''}>{signed(row.cashCents)}</td><td className={row.bankCents > 0 ? 'register-plus' : row.bankCents < 0 ? 'register-minus' : ''}>{signed(row.bankCents)}</td>
-        <td>{['purchase', 'supplier-payment', 'expense'].includes(row.kind) && !row.voided ? <button type="button" className="link danger" disabled={Boolean(busy)} onClick={() => cancel(row)}>{tr('Cancel entry')}</button> : row.billId ? <button type="button" className="link" onClick={() => open('Counter bills', { bill: row.billId })}>{tr('Open bill')}</button> : null}</td>
+        <td>{['purchase', 'supplier-payment', 'expense'].includes(row.kind) && !row.voided ? <button type="button" className="link danger" disabled={Boolean(busy)} onClick={() => cancel(row)}>{tr('Cancel entry')}</button> : row.billId ? <button type="button" className="link" onClick={() => open('Counter bills', { bill: row.billId })}>{tr('Open bill')}</button> : row.orderId ? <button type="button" className="link" onClick={() => open('Orders')}>{tr('Open orders')}</button> : null}</td>
       </tr>)}</tbody></AdminTable> : <p className="admin-empty">{tr(rows.length ? 'No entries of this type.' : 'No entries on this day yet. Add a purchase or expense above, or make a counter bill.')}</p>}
-      <p className="muted">{tr('Cancelled entries stay in the register for your records and are left out of every total. Website orders are tracked in Orders and are not part of this cash book.')}</p>
+      <p className="muted">{tr('Cancelled entries stay in the register for your records and are left out of every total. Website orders enter the books when the UPI payment is verified or a cash-on-delivery order is delivered.')}</p>
     </section>}
     {data && <Suppliers suppliers={data.suppliers} onPay={paySupplier} />}
   </div>;

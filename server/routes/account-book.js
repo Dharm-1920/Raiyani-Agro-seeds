@@ -1,17 +1,22 @@
 const router = require('express').Router();
-const { CounterBill, Expense, JournalEntry, Purchase, SupplierPayment } = require('../models');
+const { CounterBill, Expense, JournalEntry, Purchase, SupplierPayment, Order, Product } = require('../models');
+const reports = require('../services/financial-reports');
 const { protect, adminOnly } = require('../middleware');
 const books = require('../services/bookkeeping');
 const service = require('../services/account-book');
 router.use(protect, adminOnly);
 const failure = (error, res, next) => error.status ? res.status(error.status).json({ message: error.message }) : next(error);
-async function report(query) {
-  const range = books.dateRange(query.from, query.to);
-  const [bills, expenses, manual, purchases, supplierPayments] = await Promise.all([
+async function allEntries() {
+  const [bills, expenses, manual, purchases, supplierPayments, orders] = await Promise.all([
     CounterBill.find().select('shipping createdAt totalAmount paidCents payments paymentStatus paymentMethod user').lean(),
     Expense.find().lean(), JournalEntry.find().lean(), Purchase.find().lean(), SupplierPayment.find().lean(),
+    Order.find({ paymentStatus: { $in: ['paid', 'refunded'] } }).select(service.ORDER_FIELDS).lean(),
   ]);
-  const entries = service.journalEntries(bills, expenses, manual, purchases, supplierPayments);
+  return { entries: service.journalEntries(bills, expenses, manual, purchases, supplierPayments, orders), purchases };
+}
+async function report(query) {
+  const range = books.dateRange(query.from, query.to);
+  const { entries } = await allEntries();
   const ledger = service.accountLedger(entries, query.account || 'Cash', range);
   const dayBook = entries.filter(entry => (!range.start || new Date(entry.date) >= range.start) && (!range.end || new Date(entry.date) < range.end));
   return { ledger, dayBook };
@@ -30,6 +35,20 @@ router.get('/export', async (req, res, next) => {
     res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${dayBook ? 'day-book' : 'account-ledger'}.csv"`, 'Cache-Control': 'private, no-store' })
       .send(dayBook ? books.booksCsv(data.dayBook) : service.ledgerCsv(data.ledger));
   } catch (error) { failure(error, res, next); }
+});
+// Final accounts for a period: Profit & Loss for the dates, Balance sheet and Trial balance as on the end date.
+async function finalAccounts(query) {
+  const range = books.dateRange(query.from, query.to);
+  if (!range.start || !range.end) throw Object.assign(new Error('Choose both a start and an end date.'), { status: 400 });
+  const [{ entries, purchases }, products] = await Promise.all([allEntries(), Product.find({ isDeleted: { $ne: true } }).select('stock').lean()]);
+  return { from: query.from, to: query.to, profitLoss: reports.profitAndLoss(entries, range), balanceSheet: reports.balanceSheet(entries, range.end), trialBalance: reports.trialBalance(entries, range.end), stock: reports.stockValue(products, purchases) };
+}
+router.get('/reports', async (req, res, next) => {
+  try { res.set('Cache-Control', 'private, no-store').json(await finalAccounts(req.query)); } catch (error) { failure(error, res, next); }
+});
+router.get('/reports/export', async (req, res, next) => {
+  try { const data = await finalAccounts(req.query); res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="final-accounts-${req.query.from}-to-${req.query.to}.csv"`, 'Cache-Control': 'private, no-store' }).send(reports.reportsCsv(data, req.query.from, req.query.to)); }
+  catch (error) { failure(error, res, next); }
 });
 router.post('/entries', async (req, res, next) => {
   try {

@@ -42,13 +42,14 @@ function sampleBooks() {
     supplierPayments: [{ _id: 's1', occurredAt: ist(day, '00:00'), supplier: { name: 'Patel Agro' }, supplierKey: 'patel agro', amountCents: 30000, method: 'upi' }],
     expenses: [{ _id: 'e1', occurredAt: ist(day, '00:00'), description: 'Tea', category: 'Other', amountCents: 10000, method: 'cash' },
       { _id: 'e2', occurredAt: ist(day, '00:00'), description: 'Typo', category: 'Rent', amountCents: 99900, method: 'cash', voidedAt: new Date(), voidReason: 'Wrong amount' }],
-    orders: [{ totalAmount: 440, orderStatus: 'placed' }, { totalAmount: 900, orderStatus: 'cancelled' }],
+    orders: [{ _id: 'o1', totalAmount: 440, paymentMethod: 'upi', paymentStatus: 'paid', paymentVerifiedAt: ist(day, '14:00'), shipping: { name: 'Web buyer' }, items: [{ name: 'Seeds', qty: 1 }] },
+      { _id: 'o2', totalAmount: 900, paymentMethod: 'cod', paymentStatus: 'pending', orderStatus: 'placed' }],
   };
 }
 test('daily register balances cash and bank and leaves cancelled entries out of every total', () => {
   const r = dailyRegister(sampleBooks(), books.dateRange(day, day));
   assert.deepEqual(r.cash, { openingCents: 200000, inCents: 100000, outCents: 60000, closingCents: 240000 });
-  assert.deepEqual(r.bank, { openingCents: 0, inCents: 20000, outCents: 30000, closingCents: -10000 });
+  assert.deepEqual(r.bank, { openingCents: 0, inCents: 64000, outCents: 30000, closingCents: 34000 }, 'verified UPI website order is money in the bank');
   assert.equal(r.summary.salesCents, 150000); assert.equal(r.summary.receivedCents, 120000); assert.equal(r.summary.creditSalesCents, 50000);
   assert.equal(r.summary.purchasesCents, 105000); assert.equal(r.summary.purchaseTaxCents, 5000); assert.equal(r.summary.supplierPaidCents, 80000);
   assert.equal(r.summary.expensesCents, 10000); assert.equal(r.summary.customerDuesCents, 30000); assert.equal(r.summary.supplierDuesCents, 25000);
@@ -56,6 +57,26 @@ test('daily register balances cash and bank and leaves cancelled entries out of 
   const cancelled = r.rows.find(row => row.id === 'expense-e2'); assert.equal(cancelled.voided, true); assert.equal(cancelled.cashCents, 0);
   assert.equal(r.rows.find(row => row.kind === 'purchase').timeKnown, true);
   assert.ok(!r.rows.some(row => row.kind === 'journal'), 'the previous day opening entry is not a row today');
+});
+test('final accounts: P&L, a balancing balance sheet and trial balance from the same journal', () => {
+  const reports = require('../services/financial-reports'), account = require('../services/account-book'), d = sampleBooks();
+  const entries = account.journalEntries(d.bills, d.expenses, d.manual, d.purchases, d.supplierPayments, d.orders), range = books.dateRange(day, day);
+  const pl = reports.profitAndLoss(entries, range);
+  assert.equal(pl.netSalesCents, 150000 + 44000); assert.equal(pl.purchasesCents, 100000); assert.equal(pl.grossProfitCents, 94000);
+  assert.equal(pl.expensesCents, 10000, 'cancelled expense left out'); assert.equal(pl.netProfitCents, 84000);
+  const bs = reports.balanceSheet(entries, range.end);
+  assert.deepEqual(Object.fromEntries(bs.assets.map(row => [row.account, row.cents])), { Cash: 240000, 'Bank / UPI': 34000, 'Customer receivables': 30000, 'GST input credit': 5000 });
+  assert.equal(bs.assetsCents, 309000); assert.equal(bs.liabilitiesCents, 25000); assert.equal(bs.profitCents, 84000); assert.equal(bs.balanced, true);
+  const tb = reports.trialBalance(entries, range.end); assert.equal(tb.balanced, true); assert.equal(tb.debitCents, tb.creditCents);
+});
+test('website refunds are sales returns paid from the bank; COD is booked as cash on delivery', () => {
+  const account = require('../services/account-book');
+  const rows = account.websiteEntries([
+    { _id: 'w1', totalAmount: 100, paymentMethod: 'upi', paymentStatus: 'refunded', refundStatus: 'completed', paymentVerifiedAt: ist(day, '10:00'), refundVerifiedAt: ist(day, '12:00') },
+    { _id: 'w2', totalAmount: 50, paymentMethod: 'cod', paymentStatus: 'paid', deliveredAt: ist(day, '15:00'), updatedAt: ist(day, '18:00') },
+    { _id: 'w3', totalAmount: 70, paymentMethod: 'upi', paymentStatus: 'pending' }]);
+  assert.deepEqual(rows.map(row => [row.kind, row.debit, row.credit, row.amountCents]), [['website-sale', 'Bank / UPI', 'Website sales', 10000], ['website-refund', 'Sales returns', 'Bank / UPI', 10000], ['website-sale', 'Cash', 'Website sales', 5000]]);
+  assert.equal(rows[2].date.toISOString(), ist(day, '15:00').toISOString(), 'COD uses the delivery time');
 });
 test('supplier statement runs a balance and ignores cancelled payments', () => {
   const data = sampleBooks(); data.supplierPayments.push({ _id: 's2', occurredAt: ist(day, '00:00'), supplierKey: 'patel agro', supplier: { name: 'Patel Agro' }, amountCents: 5000, method: 'cash', voidedAt: new Date() });

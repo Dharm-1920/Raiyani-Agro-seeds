@@ -1,7 +1,9 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express'), jwt = require('jsonwebtoken');
-const { User, CounterBill, Expense, JournalEntry, Purchase, SupplierPayment } = require('../models');
+const { User, CounterBill, Expense, JournalEntry, Purchase, SupplierPayment, Order, Product } = require('../models');
+Order.find = () => ({ select: () => ({ lean: async () => [] }) });
+Product.find = () => ({ select: () => ({ lean: async () => [] }) });
 Purchase.find = () => ({ lean: async () => [] });
 SupplierPayment.find = () => ({ lean: async () => [] });
 const admin = '000000000000000000000001', customer = '000000000000000000000002';
@@ -26,6 +28,14 @@ test('account API includes prior opening entries and produces a dated day book',
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
   assert.equal(data.openingCents, 500000); assert.equal(data.debitCents, 100000); assert.equal(data.creditCents, 20000); assert.equal(data.closingCents, 580000); assert.equal(data.totalRows, 2); assert.equal(data.totalDayRows, 3);
   assert.equal((await request('?account=Unknown')).status, 400);
+});
+test('final accounts are admin-only, need a period, and balance', async () => {
+  for (const user of [null, customer]) assert.equal((await request('/reports?from=2026-10-01&to=2026-10-31', user)).status, user ? 403 : 401);
+  assert.equal((await request('/reports?from=2026-10-01', admin)).status, 400);
+  const data = await (await request('/reports?from=2026-10-01&to=2026-10-31')).json();
+  assert.equal(data.profitLoss.netSalesCents, 100000); assert.equal(data.profitLoss.expensesCents, 20000); assert.equal(data.profitLoss.netProfitCents, 80000);
+  assert.equal(data.balanceSheet.assetsCents, 580000); assert.equal(data.balanceSheet.balanced, true); assert.equal(data.trialBalance.balanced, true);
+  const csv = await (await request('/reports/export?from=2026-10-01&to=2026-10-31')).text(); assert.match(csv, /Net profit","800.00"/);
 });
 test('manual transfers are saved once across concurrent retries and appear in the receiving account', async () => {
   const entry = { requestKey: 'cash-bank-transfer-123', date: '2026-10-03', description: 'Cash bank deposit', debitAccount: 'Bank / UPI', creditAccount: 'Cash', amount: 500 };

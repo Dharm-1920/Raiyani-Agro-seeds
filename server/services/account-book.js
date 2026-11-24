@@ -2,7 +2,23 @@ const crypto = require('crypto');
 const books = require('./bookkeeping');
 const { text, decimal, invalid } = require('./counter-bills');
 const manualAccounts = ['Cash', 'Bank / UPI', 'Card clearing', 'Owner capital', 'Owner drawings', 'Loan payable', 'Opening balance equity', 'Other income', ...books.categories.map(category => 'Expense: ' + category)];
-const allAccounts = [...manualAccounts, 'Customer receivables', 'Counter sales', 'Purchases', 'GST input credit', 'Supplier payables'];
+const allAccounts = [...manualAccounts, 'Customer receivables', 'Counter sales', 'Website sales', 'Sales returns', 'Purchases', 'GST input credit', 'Supplier payables'];
+// Website orders become sales when the money is in: UPI when the bank payment is verified, COD when delivered.
+// A completed refund is booked as a sales return paid from the bank.
+const orderDate = (order, field) => order[field] || order.updatedAt || order.createdAt;
+function websiteEntries(orders = []) {
+  const out = [];
+  for (const order of orders) {
+    if (!['paid', 'refunded'].includes(order.paymentStatus)) continue;
+    const amountCents = Math.round(Number(order.totalAmount || 0) * 100);
+    if (amountCents <= 0) continue;
+    const cod = order.paymentMethod === 'cod', reference = 'WO-' + String(order._id).toUpperCase(), customer = order.shipping?.name || '';
+    out.push({ id: 'website-sale-' + order._id, date: orderDate(order, cod ? 'deliveredAt' : 'paymentVerifiedAt'), reference, description: cod ? 'Website order · cash on delivery' : 'Website order · UPI', customer, debit: cod ? 'Cash' : 'Bank / UPI', credit: 'Website sales', amountCents, kind: 'website-sale', orderId: String(order._id) });
+    if (order.paymentStatus === 'refunded' || order.refundStatus === 'completed') out.push({ id: 'website-refund-' + order._id, date: orderDate(order, 'refundVerifiedAt'), reference, description: 'Website order refund', customer, debit: 'Sales returns', credit: 'Bank / UPI', amountCents, kind: 'website-refund', orderId: String(order._id) });
+  }
+  return out;
+}
+const ORDER_FIELDS = 'shipping items totalAmount paymentMethod paymentStatus refundStatus paymentVerifiedAt deliveredAt refundVerifiedAt createdAt updatedAt';
 // Purchases and supplier payments as double entries. Cancelled entries are left out.
 function purchaseEntries(purchases = [], payments = []) {
   const out = [];
@@ -24,8 +40,8 @@ function prepareJournal(body = {}) {
   if (!manualAccounts.includes(data.debitAccount) || !manualAccounts.includes(data.creditAccount) || data.debitAccount === data.creditAccount) invalid('Choose two different supported accounts. Customer sales and receipts must be recorded through bills.');
   return { ...data, requestKey: books.key(body.requestKey), requestHash: crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex') };
 }
-function journalEntries(bills, expenses, manual, purchases = [], supplierPayments = []) {
-  return [...books.buildBooks(bills, expenses).entries, ...purchaseEntries(purchases, supplierPayments), ...manual.map(entry => ({
+function journalEntries(bills, expenses, manual, purchases = [], supplierPayments = [], orders = []) {
+  return [...books.buildBooks(bills, expenses).entries, ...purchaseEntries(purchases, supplierPayments), ...websiteEntries(orders), ...manual.map(entry => ({
     id: 'manual-' + entry._id, date: entry.occurredAt, reference: 'JE-' + String(entry._id).toUpperCase(), description: entry.description,
     customer: '', debit: entry.debitAccount, credit: entry.creditAccount, amountCents: entry.amountCents, kind: 'manual',
   }))].sort((a, b) => new Date(a.date) - new Date(b.date) || a.id.localeCompare(b.id));
@@ -79,4 +95,4 @@ function ledgerCsv(ledger) {
     ['', '', 'Closing balance', '', '', balance(ledger.closingCents)]];
   return '\ufeff' + lines.map(row => row.map(cell).join(',')).join('\r\n');
 }
-module.exports = { manualAccounts, allAccounts, purchaseEntries, prepareJournal, journalEntries, accountLedger, customerStatement, ledgerCsv };
+module.exports = { manualAccounts, allAccounts, purchaseEntries, websiteEntries, ORDER_FIELDS, prepareJournal, journalEntries, accountLedger, customerStatement, ledgerCsv };

@@ -11,7 +11,7 @@ async function loadBooks(range) {
   const [bills, expenses, manual, purchaseList, supplierPayments, orders] = await Promise.all([
     CounterBill.find().select('shipping items createdAt totalAmount paidCents payments paymentStatus paymentMethod user').lean(),
     Expense.find().lean(), JournalEntry.find().lean(), Purchase.find().lean(), SupplierPayment.find().lean(),
-    range.start && range.end ? Order.find({ createdAt: { $gte: range.start, $lt: range.end } }).select('totalAmount orderStatus').lean() : [],
+    Order.find({ paymentStatus: { $in: ['paid', 'refunded'] } }).select(require('../services/account-book').ORDER_FIELDS).lean(),
   ]);
   return { bills, expenses, manual, purchases: purchaseList, supplierPayments, orders };
 }

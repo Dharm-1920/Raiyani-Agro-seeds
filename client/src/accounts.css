@@ -1,0 +1,39 @@
+/* Accounts: one menu with section tabs. Same palette as the admin. */
+.accounts-nav{display:flex;gap:6px;overflow-x:auto;background:#fffef8;border:1px solid #e1e5d6;border-radius:12px;padding:6px;margin-bottom:10px;scrollbar-width:thin}
+.accounts-nav button{flex:none;display:inline-flex;align-items:center;gap:8px;background:transparent;color:#4e6544;border:0;border-radius:8px;padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer}
+.accounts-nav button:hover:not(.active){background:#f0f3e6;color:#375d3c}
+.accounts-nav button.active{background:#173c28;color:#f7f2dd;font-weight:600}
+.accounts-hint{font-size:12px;color:#7a8470;margin:0 4px 18px}
+
+.report-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
+.report-controls .admin-chips{margin:0;padding-bottom:0}
+.report-controls .books-filters{width:100%;order:3}
+.report-actions{display:flex;gap:10px}
+.report-actions button{display:inline-flex;align-items:center;gap:7px}
+.report-headline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.report-headline>div{background:#fffef8;border:1px solid #e1e5d6;border-radius:12px;padding:18px}
+.report-headline small{font-size:11px;color:#758864}
+.report-headline b{display:block;font-family:Georgia,serif;font-weight:400;font-size:26px;margin-top:10px;letter-spacing:-.5px;overflow-wrap:anywhere}
+.report-headline .is-profit{background:#f0f5e7;border-color:#d5e1c3}.report-headline .is-profit b{color:#2f5a2a}
+.report-headline .is-loss{background:#fbf0e8;border-color:#ecd2bf}.report-headline .is-loss b{color:#a0482b}
+.report-tabs{margin-bottom:12px}
+.report-sheet h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;font-family:Georgia,serif;font-weight:400;font-size:22px}
+.report-sheet h3 small{font-family:inherit;font-size:12px;color:#7a8470}
+.report-sheet dl{margin:0;max-width:640px}
+.report-line{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed #e3e7d8;font-size:13px}
+.report-line dt small{display:block;font-size:10px;color:#8a9380;margin-top:3px}
+.report-line dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.report-line.is-strong{border-bottom:1px solid #cfd8bf;border-top:1px solid #cfd8bf;font-weight:700;color:#173c28;background:#f6f8ef;padding:11px 10px;margin:4px -10px}
+.report-group{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#7c8771;margin:18px 0 4px}
+.report-columns{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.report-columns dl{max-width:none}
+.report-check{display:flex;align-items:center;gap:8px;font-size:12px;color:#8a5f14;margin-top:18px}
+.report-check.is-ok{color:#3f6338}
+.admin-panel table.report-table{display:table;width:100%;max-width:640px;border-collapse:collapse;font-size:13px;margin-top:8px}
+.report-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#6f7c64;background:#edf0e2;padding:10px}
+.report-table td{padding:10px;border-bottom:1px solid #eceee4}
+.report-table th:not(:first-child),.report-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.report-table tfoot td{font-weight:700;border-top:2px solid #cfd8bf;border-bottom:0;color:#173c28}
+@media(max-width:900px){.report-headline{grid-template-columns:1fr 1fr}.report-columns{grid-template-columns:1fr;gap:0}}
+@media(max-width:760px){.accounts-nav button{padding:10px 12px;font-size:12px}.report-headline b{font-size:21px}}
+@media print{.accounts-nav,.accounts-hint,.report-controls,.report-tabs{display:none!important}}

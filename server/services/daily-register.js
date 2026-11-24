@@ -6,7 +6,7 @@ const itemSummary = items => (items || []).map(item => `${item.name} × ${Number
 const effect = (method, cents) => ({ cashCents: method === 'cash' ? cents : 0, bankCents: method === 'upi' ? cents : 0 });
 // Date-only entries (purchases, expenses) show the time they were typed in, when that was on the same day.
 const when = entry => entry.createdAt && indiaDay(entry.createdAt) === indiaDay(entry.occurredAt) ? { at: entry.createdAt, timeKnown: true } : { at: entry.occurredAt, timeKnown: false };
-function registerRows({ bills = [], expenses = [], manual = [], purchases = [], supplierPayments = [] }, range) {
+function registerRows({ bills = [], expenses = [], manual = [], purchases = [], supplierPayments = [], orders = [] }, range) {
   const within = date => { const at = new Date(date); return !Number.isNaN(at.valueOf()) && (!range.start || at >= range.start) && (!range.end || at < range.end); };
   const rows = [];
   for (const bill of bills) {
@@ -23,6 +23,11 @@ function registerRows({ bills = [], expenses = [], manual = [], purchases = [], 
   }
   for (const s of supplierPayments) if (within(s.occurredAt)) rows.push({ id: 'supplier-payment-' + s._id, entryId: String(s._id), kind: 'supplier-payment', ...when(s), reference: 'SP-' + String(s._id).toUpperCase(), party: s.supplier?.name || '', details: s.note || 'Supplier payment', amountCents: s.amountCents, settledCents: s.amountCents, mode: s.method, voided: Boolean(s.voidedAt), voidReason: s.voidReason || '', ...effect(s.voidedAt ? '' : s.method, -s.amountCents) });
   for (const e of expenses) if (within(e.occurredAt)) rows.push({ id: 'expense-' + e._id, entryId: String(e._id), kind: 'expense', ...when(e), reference: 'EX-' + String(e._id).toUpperCase(), party: e.payee || '', details: e.description + (e.category ? ' · ' + e.category : ''), category: e.category, amountCents: e.amountCents, settledCents: e.amountCents, mode: e.method, voided: Boolean(e.voidedAt), voidReason: e.voidReason || '', ...effect(e.voidedAt ? '' : e.method, -e.amountCents) });
+  const orderItems = new Map(orders.map(order => [String(order._id), itemSummary(order.items)]));
+  for (const w of account.websiteEntries(orders)) if (within(w.date)) {
+    const refund = w.kind === 'website-refund', cents = refund ? -w.amountCents : w.amountCents, method = w.debit === 'Cash' ? 'cash' : 'upi';
+    rows.push({ id: w.id, kind: w.kind, at: w.date, timeKnown: true, reference: w.reference, party: w.customer, details: (refund ? 'Refund · ' : '') + (orderItems.get(w.orderId) || 'Website order'), amountCents: w.amountCents, settledCents: w.amountCents, mode: refund ? 'upi' : method, orderId: w.orderId, ...effect(refund ? 'upi' : method, cents) });
+  }
   for (const j of manual) if (within(j.occurredAt)) {
     const sign = accountName => (j.debitAccount === accountName ? j.amountCents : 0) - (j.creditAccount === accountName ? j.amountCents : 0);
     rows.push({ id: 'manual-' + j._id, kind: 'journal', ...when(j), reference: 'JE-' + String(j._id).toUpperCase(), party: '', details: `${j.description} · ${j.debitAccount} → ${j.creditAccount}`, amountCents: j.amountCents, settledCents: 0, mode: 'journal', cashCents: sign('Cash'), bankCents: sign('Bank / UPI') });
@@ -30,10 +35,9 @@ function registerRows({ bills = [], expenses = [], manual = [], purchases = [], 
   return rows.sort((a, b) => new Date(a.at) - new Date(b.at) || a.id.localeCompare(b.id));
 }
 function dailyRegister(data, range) {
-  const entries = account.journalEntries(data.bills || [], data.expenses || [], data.manual || [], data.purchases || [], data.supplierPayments || []);
+  const entries = account.journalEntries(data.bills || [], data.expenses || [], data.manual || [], data.purchases || [], data.supplierPayments || [], data.orders || []);
   const ledger = name => { const l = account.accountLedger(entries, name, range); return { openingCents: l.openingCents, inCents: l.debitCents, outCents: l.creditCents, closingCents: l.closingCents }; };
   const rows = registerRows(data, range), live = rows.filter(row => !row.voided), sum = (kind, field = 'amountCents') => live.filter(row => row.kind === kind).reduce((total, row) => total + row[field], 0);
-  const website = (data.orders || []).filter(order => order.orderStatus !== 'cancelled');
   const suppliers = supplierBalances(data.purchases || [], data.supplierPayments || []);
   const summary = {
     salesCents: sum('sale'), salesCount: live.filter(row => row.kind === 'sale').length,
@@ -42,7 +46,7 @@ function dailyRegister(data, range) {
     purchasesCents: sum('purchase'), purchaseTaxCents: sum('purchase', 'taxCents'), purchasesCount: live.filter(row => row.kind === 'purchase').length,
     supplierPaidCents: sum('purchase', 'settledCents') + sum('supplier-payment'),
     expensesCents: sum('expense'),
-    websiteOrders: website.length, websiteCents: Math.round(website.reduce((total, order) => total + Number(order.totalAmount || 0), 0) * 100),
+    websiteOrders: live.filter(row => row.kind === 'website-sale').length, websiteCents: sum('website-sale') - sum('website-refund'),
     customerDuesCents: (data.bills || []).reduce((total, bill) => total + books.financials(bill).balanceCents, 0),
     supplierDuesCents: suppliers.reduce((total, s) => total + Math.max(0, s.dueCents), 0),
   };
@@ -50,7 +54,7 @@ function dailyRegister(data, range) {
   for (const row of live) if (row.kind === 'expense') expenseByCategory[row.category || 'Other'] = (expenseByCategory[row.category || 'Other'] || 0) + row.amountCents;
   return { summary, cash: ledger('Cash'), bank: ledger('Bank / UPI'), rows, expenseByCategory, suppliers };
 }
-const kindLabels = { sale: 'Sale', receipt: 'Customer payment', purchase: 'Purchase', 'supplier-payment': 'Supplier payment', expense: 'Expense', journal: 'Journal' };
+const kindLabels = { sale: 'Sale', receipt: 'Customer payment', 'website-sale': 'Website sale', 'website-refund': 'Website refund', purchase: 'Purchase', 'supplier-payment': 'Supplier payment', expense: 'Expense', journal: 'Journal' };
 const modeLabels = { cash: 'Cash', upi: 'Bank / UPI', card: 'Card', later: 'Credit', credit: 'Credit', journal: 'Journal' };
 function registerCsv(rows) {
   const cell = value => { let s = String(value ?? ''); if (/^\s*[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
