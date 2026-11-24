@@ -38,6 +38,7 @@ app.use('/api/admin/counter-bills', require('./routes/counter-bills'));
 app.use('/api/admin/bookkeeping', require('./routes/bookkeeping'));
 app.use('/api/admin/counter-customers', require('./routes/counter-customers'));
 app.use('/api/admin/account-book', require('./routes/account-book'));
+app.use('/api/admin/daily-register', require('./routes/daily-register'));
 app.post('/api/contact', require('./middleware').protect, rateLimit({ windowMs: 60 * 60 * 1000, limit: 10 }), async (req, res) => {
   // Farmers often have a phone number but no email, so either one is accepted.
   const { normalizePhone, normalizeEmail } = require('./services/identity');

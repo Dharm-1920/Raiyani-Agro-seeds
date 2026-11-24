@@ -1,0 +1,87 @@
+/* Storefront interactions (logic in interactions.jsx, purchase.jsx and pages.jsx).
+   html[data-fx] is set on customer pages only. "Reduce motion" turns all of this off
+   (see the global rule at the end of style.css). */
+
+/* ---------- Scrolling: content glides in as it comes into view ---------- */
+html[data-fx].reveal-on .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms),transform .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms)}
+html[data-fx].reveal-on .reveal.is-revealed{opacity:1;transform:none}
+@media print{.reveal{opacity:1!important;transform:none!important}}
+
+/* ---------- Scrolling: progress line at the top ---------- */
+.scroll-progress{position:fixed;left:0;right:0;top:0;z-index:90;height:3px;pointer-events:none}
+.scroll-progress span{display:block;height:100%;transform:scaleX(0);transform-origin:0 50%;background:linear-gradient(90deg,#3f7a4d,#9bb36a 60%,#c9a94b);box-shadow:0 0 8px #c9a94b80;will-change:transform}
+
+/* ---------- Scrolling: header tucks away going down, returns going up ---------- */
+html[data-fx] header.nav{position:sticky;top:0;z-index:55;transition:transform .38s cubic-bezier(.2,.7,.2,1),box-shadow .3s,background-color .3s}
+html[data-fx] header.nav.is-scrolled{background:#f7f5edf2;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px #1c37271a}
+html[data-fx] header.nav.is-hidden{transform:translateY(-105%)}
+
+/* ---------- Scrolling: back to top ---------- */
+.back-to-top{position:fixed;right:max(22px,env(safe-area-inset-right));bottom:96px;z-index:59;display:grid;place-items:center;width:46px;height:46px;padding:0;border-radius:50%;background:#fffef8;color:var(--g);border:1px solid #d5ddca;box-shadow:0 8px 24px #193d3024;opacity:0;visibility:hidden;transform:translateY(16px) scale(.85);transition:opacity .3s,transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s .35s}
+.back-to-top.is-shown{opacity:1;visibility:visible;transform:none;transition:opacity .3s,transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.back-to-top:hover{background:#eef3e5;color:var(--g);transform:translateY(-2px)}
+
+/* ---------- Selecting: category chips with a sliding highlight ---------- */
+.shop-chips{position:relative;isolation:isolate}
+.shop-chips button{position:relative;z-index:1;transition:color .3s,background-color .3s,border-color .3s}
+.shop-chips.has-mark button{background:transparent}
+.shop-chips.has-mark button:hover:not(.selected){background:#ffffff99;color:var(--g)}
+.shop-chips.has-mark button.selected,.shop-chips.has-mark button.selected:hover{background:transparent;border-color:transparent;color:#fff}
+.chip-mark{position:absolute;left:0;top:0;z-index:0;border-radius:40px;background:var(--g);box-shadow:0 6px 16px #234b3633;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1),height .3s}
+
+/* ---------- Selecting: payment choice and delivery address ---------- */
+.payment-choices label.fx-pay-option{padding-right:44px}
+.payment-choices label.fx-pay-option.selected::after{content:'';position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;background:var(--g) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff8e8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4L19 6'/%3E%3C/svg%3E") center/13px no-repeat;animation:select-pop .45s cubic-bezier(.3,1.6,.5,1)}
+.payment-choices label.fx-pay-option.selected .fx-pay-icon{animation:select-pop .45s cubic-bezier(.3,1.6,.5,1)}
+.address-book-card.is-selected{animation:select-glow .6s ease-out}
+@keyframes select-pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+@keyframes select-glow{0%{box-shadow:0 0 0 0 #628a5366}100%{box-shadow:0 0 0 2px #628a5318}}
+
+/* ---------- Touch: pressed feel and ripple ---------- */
+html[data-fx] :is(.btn,.fx-place,.purchase-buttons button,.shop-chips button,.fx-dock-item,.category,.cart-toast-link):active{transform:scale(.97)}
+.ripple-host{position:relative;overflow:hidden;isolation:isolate}
+.ripple{position:absolute;z-index:-1;border-radius:50%;background:currentColor;opacity:.2;transform:scale(0);pointer-events:none;animation:ripple .65s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+
+/* ---------- Product cards: picture zooms gently on hover ---------- */
+html[data-fx] .card .product-image img,html[data-fx] .card .product-image .product-art{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+html[data-fx] .card:hover .product-image img,html[data-fx] .card:hover .product-image .product-art{transform:scale(1.06)}
+
+/* ---------- Adding to cart: the product picture flies into the cart ---------- */
+.cart-fly{position:fixed;z-index:10000;display:block;border-radius:16px;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,#fffdf4,#e9eddc);box-shadow:0 18px 40px #173e2c40,0 0 0 3px #fffef8;will-change:transform,opacity}
+.cart-fly>img,.cart-fly>.ph{display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0;padding:6%;object-fit:contain;border-radius:0;aspect-ratio:auto;background:transparent}
+.cart-fly .ph>span{display:none}
+.cart-fly .product-art{width:100%;height:auto;max-height:none}
+.cart-fly-plus{position:fixed;z-index:10001;pointer-events:none;padding:4px 10px;border-radius:20px;background:#e8d89e;color:#24452d;font-size:12px;font-weight:800;box-shadow:0 4px 12px #24452d30}
+
+/* ---------- Adding to cart: confirmation with the next step ---------- */
+.cart-toast{position:fixed;left:50%;bottom:24px;z-index:75;display:flex;align-items:center;gap:12px;width:min(470px,calc(100vw - 24px));padding:10px;border-radius:18px;background:#173c29;color:#fff8e8;box-shadow:0 18px 50px #0e2a1c55;opacity:0;visibility:hidden;transform:translate(-50%,120%);transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s,visibility 0s .45s}
+.cart-toast.is-open{opacity:1;visibility:visible;transform:translate(-50%,0);transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s,visibility 0s}
+.cart-toast-thumb{flex-shrink:0;display:grid;place-items:center;width:48px;height:48px;border-radius:12px;overflow:hidden;background:#e8d5a0;color:#173c29;animation:toast-pop .5s cubic-bezier(.3,1.6,.5,1)}
+.cart-toast-thumb img{width:100%;height:100%;object-fit:cover}
+.cart-toast-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cart-toast-text b{font-size:14px}
+.cart-toast-text small{overflow:hidden;font-size:12px;color:#c9d4bd;white-space:nowrap;text-overflow:ellipsis}
+.cart-toast-link{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:30px;background:#e8d5a0;color:#173c29;font-size:13px;font-weight:700;text-decoration:none}
+.cart-toast-link:hover{background:#f3e1b7;color:#173c29}
+.cart-toast-close{flex-shrink:0;display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:50%;background:transparent;color:#c9d4bd}
+.cart-toast-close:hover{background:#ffffff14;color:#fff}
+@keyframes toast-pop{0%{transform:scale(.4) rotate(-12deg)}100%{transform:none}}
+
+/* ---------- Cart: free delivery unlocked ---------- */
+.delivery-progress.done{animation:unlock .7s cubic-bezier(.3,1.5,.5,1)}
+.delivery-progress.done p svg{animation:truck-go .9s ease-in-out}
+@keyframes unlock{0%{transform:scale(.97)}55%{transform:scale(1.015)}100%{transform:scale(1)}}
+@keyframes truck-go{0%{transform:translateX(-6px)}50%{transform:translateX(6px)}100%{transform:none}}
+
+@media(max-width:760px){
+  .back-to-top{right:14px;bottom:calc(150px + env(safe-area-inset-bottom));width:42px;height:42px}
+  html[data-dock] .cart-toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+  .cart-toast{gap:10px;padding:8px}
+  .cart-toast-thumb{width:42px;height:42px}
+  .cart-toast-link{padding:10px 13px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .scroll-progress{display:none}
+  .card .product-image img,.card .product-image .product-art{transform:none!important}
+}

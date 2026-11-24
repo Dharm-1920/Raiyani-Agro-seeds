@@ -5,7 +5,7 @@ export const SHOP = {
   city: 'Gondal, Gujarat',
   address: 'Shop No 2, New Marketing Yard, Gondal, Gujarat 360311, India',
   phone: '+91 97146 23500',
-  whatsapp: '919714623500', // WhatsApp number for customer questions: country code + number, digits only
+  whatsapp: '919913348935', // WhatsApp number for customer questions: country code + number, digits only
   alternatePhone: '+91 94269 77635',
   email: 'raiyaniagroseeds.support@gmail.com',
   hours: 'Monday – Saturday | 8 AM – 8 PM',

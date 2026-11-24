@@ -14,6 +14,8 @@ import accountBookGu from './account-book-gu.json';
 import counterPosGu from './counter-pos-gu.json';
 import adminUxGu from './admin-ux-gu.json';
 import addressGu from './address-gu.json';
+import shopUiGu from './shop-ui-gu.json';
+import dailyRegisterGu from './daily-register-gu.json';
 import { animatePage } from './motion';
 const key='raiyani-language';
 const productTranslations = new Map();
@@ -51,7 +53,7 @@ export function useLanguage(){return {language:useSyncExternalStore(subscribe,sn
 export function tr(text){
   if(typeof text!=='string')return text;
   if(language!=='gu')return ({'Remove product confirmation':'Remove \"{name}\" from your catalogue and shop? Existing order history will be kept.','Change role confirmation':"Change {name}'s role to {role}?",'Delete account confirmation':"Delete {name}'s account?"})[text] || text;
-  const clean=text.trim(),translated=productTranslations.get(text) || productTranslations.get(clean) || addressGu[clean] || adminUxGu[clean] || counterPosGu[clean] || accountBookGu[clean] || bookkeepingGu[clean] || counterBillsGu[clean] || purchaseGu[clean] || authGu[clean] || profileGu[clean] || notificationsGu[clean] || productUiGu[clean] || coverGu[clean] || wixGu[clean] || businessGu[clean] || gu[clean];
+  const clean=text.trim(),translated=productTranslations.get(text) || productTranslations.get(clean) || shopUiGu[clean] || addressGu[clean] || adminUxGu[clean] || counterPosGu[clean] || accountBookGu[clean] || bookkeepingGu[clean] || counterBillsGu[clean] || purchaseGu[clean] || authGu[clean] || profileGu[clean] || notificationsGu[clean] || productUiGu[clean] || coverGu[clean] || wixGu[clean] || businessGu[clean] || gu[clean] || dailyRegisterGu[clean];
   if(translated)return text.slice(0,text.indexOf(clean))+translated+text.slice(text.indexOf(clean)+clean.length);
   if(clean.startsWith('Status for order '))return 'ઓર્ડરની સ્થિતિ '+clean.slice(17);
   for(const prefix of ['Cancel this order and restore its stock?','Cancel this order?','Complete cancellation and stock restoration?'])if(clean.startsWith(prefix+' '))return tr(prefix)+' '+tr(clean.slice(prefix.length+1));

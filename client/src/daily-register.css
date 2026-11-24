@@ -1,0 +1,110 @@
+/* Daily register: same forest green / parchment palette as the rest of the admin. */
+.register-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:22px}
+.register-date{display:flex;align-items:center;gap:8px}
+.register-date input{width:auto;font-size:13px;padding:9px 10px}
+.register-date .secondary{font-size:18px;line-height:1;padding:8px 13px}
+.register-title h2{font-family:Georgia,serif;font-weight:400;font-size:24px;letter-spacing:-.4px;margin:6px 0 0;display:inline-block;margin-right:12px}
+.register-title .eyebrow{display:block;font-size:9px}
+.register-status{display:inline-block;vertical-align:middle;font-size:10px;padding:4px 10px;border-radius:999px;background:#f3e2b5;color:#8a5f14}
+.register-status.is-closed{background:#e3ecd4;color:#3f6338}
+.register-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.register-actions button{display:inline-flex;align-items:center;gap:7px}
+.register-notice{margin:0 0 16px}
+
+.register-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.register-kpis>div{background:#fffef8;border:1px solid #e1e5d6;border-radius:12px;padding:18px;border-top:3px solid #d8dfcc;min-width:0}
+.register-kpis>div.is-in{border-top-color:#7f9d5b}
+.register-kpis>div.is-out{border-top-color:#c79a3a}
+.register-kpis span{display:flex;justify-content:space-between;align-items:center;color:#758864}
+.register-kpis small{font-size:11px}
+.register-kpis b{display:block;font-family:Georgia,serif;font-weight:400;font-size:24px;letter-spacing:-.5px;margin-top:14px;overflow-wrap:anywhere}
+.register-kpis p{font-size:10px;color:#89927e;margin:8px 0 0;line-height:1.5}
+
+.register-books{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:14px;margin-bottom:12px}
+.register-cash,.register-close{background:#fffef8;border:1px solid #e1e5d6;border-radius:12px;padding:20px}
+.register-cash h4,.register-close h4{display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:14px;color:#24492c}
+.register-cash dl,.register-bill-total{margin:0}
+.register-cash dl>div,.register-bill-total>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:12px;border-bottom:1px dashed #e6e9dc}
+.register-cash dt,.register-bill-total dt{color:#6f7c64}
+.register-cash dd,.register-bill-total dd{margin:0;font-variant-numeric:tabular-nums}
+.register-cash .is-in dd{color:#3f6f35}
+.register-cash .is-out dd{color:#a0602b}
+.register-cash .is-total,.register-bill-total .is-total{border-bottom:0;font-weight:700;font-size:14px;color:#173c28}
+.is-negative{color:#aa5946!important}
+.register-close{display:flex;flex-direction:column;gap:8px}
+.register-close.is-closed{background:#f2f6ea;border-color:#d5e1c3}
+.register-close.has-difference{background:#fbf4e2;border-color:#ead7a6}
+.register-close p{font-size:12px;margin:0}
+.register-close label{font-size:12px;margin:4px 0}
+.register-close small{font-size:10px;color:#86907a}
+.register-close button{align-self:flex-start;font-size:12px}
+.register-verdict{font-weight:600;color:#24492c}
+.has-difference .register-verdict{color:#8a5f14}
+.register-warning{color:#8a5f14!important;font-size:11px!important}
+.register-dues{display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:#5f6d55;margin:0 0 22px;padding:0 4px}
+.register-dues b{color:#173c28}
+
+.register-shortcuts{display:flex;gap:16px;flex-wrap:wrap}
+.register-shortcuts .link{font-size:12px}
+.register-tabs{margin-bottom:12px}
+.register-tabs button svg{margin-right:2px}
+.register-form fieldset{border:0;padding:0;margin:0;min-width:0}
+.register-form label{font-size:12px;margin:10px 0}
+.register-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px}
+.register-due{display:block;margin-top:5px;font-size:10px;color:#6f7c64}
+.register-due.is-due{color:#8a5f14;font-weight:600}
+.register-inline{display:flex;gap:8px}
+.register-inline input{min-width:0;flex:1}
+.register-inline button{flex:none;font-size:11px;padding:8px 11px}
+.register-items{margin:14px 0;border:1px solid #e1e5d6;border-radius:10px;padding:12px;background:#fbfcf6}
+.register-item{display:grid;grid-template-columns:minmax(200px,2.2fr) minmax(150px,1.3fr) minmax(90px,.9fr) 80px minmax(90px,.9fr) 34px;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid #eceee4}
+.register-item:last-of-type{border-bottom:0}
+.register-item input,.register-item select{font-size:12px;padding:9px;width:100%;margin:0}
+.register-item-head{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#7c8771;padding-top:0}
+.register-item-name{display:flex;flex-direction:column;gap:6px}
+.register-qty{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.register-line-total{font-size:13px;padding-top:9px;text-align:right;font-variant-numeric:tabular-nums}
+.register-item .link{padding:8px 4px}
+.register-add-line{margin-top:10px;font-size:12px}
+.register-totals{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+.register-bill-total{background:#f4f6ed;border:1px solid #e0e7d4;border-radius:10px;padding:10px 16px;margin-top:10px}
+.register-bill-total .is-credit dd{color:#8a5f14;font-weight:600}
+.register-more{margin:8px 0}
+.register-more summary{cursor:pointer;font-size:12px;color:#4e6544}
+.register-check{display:flex!important;align-items:center;gap:9px;font-size:12px;margin:12px 0!important}
+.register-check input{width:auto;margin:0}
+.register-retry{font-size:12px;color:#8a5f14}
+.register-form>button{margin-top:10px;font-size:13px}
+
+.register-kind{display:inline-block;white-space:nowrap;font-size:10px;padding:4px 9px;border-radius:999px;background:#edf0e2;color:#4e6544}
+.register-kind.is-sale,.register-kind.is-receipt{background:#e3ecd4;color:#3f6338}
+.register-kind.is-purchase{background:#e5edf3;color:#2f5670}
+.register-kind.is-supplier-payment{background:#efe6f3;color:#5f3f70}
+.register-kind.is-expense{background:#f6e7d5;color:#87522a}
+.register-plus{color:#3f6f35;font-weight:600;white-space:nowrap}
+.register-minus{color:#a0602b;font-weight:600;white-space:nowrap}
+.admin-panel td.register-details{min-width:210px;max-width:300px;overflow-wrap:anywhere}
+.register-table td:first-child{min-width:0;white-space:nowrap}
+.register-table td:nth-child(2){min-width:0}
+.admin-panel tr.is-voided td{background:#f7f6f1;color:#9aa08f}
+.admin-panel tr.is-voided td b,.admin-panel tr.is-voided .register-details{text-decoration:line-through}
+.register-void-reason{color:#aa5946!important;text-decoration:none}
+.register-total-due{font-size:12px;color:#5f6d55}
+.register-owed{color:#8a5f14}
+.register-statement{margin-top:20px;padding-top:16px;border-top:1px solid #e1e5d6}
+.register-statement h4{margin:0 0 8px;font-size:14px}
+
+@media(max-width:1250px){.register-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.register-books{grid-template-columns:1fr 1fr}.register-close{grid-column:1/-1}}
+@media(max-width:900px){.register-head{grid-template-columns:1fr}.register-actions{justify-content:flex-start}.register-totals{grid-template-columns:1fr;gap:0}
+  .register-item{grid-template-columns:1fr 1fr;gap:8px;padding:12px 0}.register-item-head{display:none}.register-item-name{grid-column:1/-1}.register-qty{grid-column:1/-1}.register-line-total{text-align:left;padding-top:0}.register-item .link{justify-self:end}}
+@media(max-width:760px){.register-kpis{grid-template-columns:1fr 1fr;gap:10px}.register-kpis>div{padding:14px}.register-kpis b{font-size:20px}.register-books{grid-template-columns:1fr}.register-title h2{font-size:20px}.register-date{flex-wrap:wrap}}
+
+/* Printed day sheet: just the day's figures and entries. */
+@media print{
+  .admin-sidebar,.admin-topbar,.admin-title,.admin-bottom-note,.register-date,.register-actions,.register-entry,.register-close form,.register-close button,.admin-chips,.admin-panel .link,.admin-table-hint,.register-table .muted{display:none!important}
+  .admin-shell{display:block}.admin-content{padding:0}
+  .admin-panel,.register-kpis>div,.register-cash,.register-close{box-shadow:none;break-inside:avoid}
+  .register-kpis{grid-template-columns:repeat(3,1fr)}.register-books{grid-template-columns:repeat(3,1fr)}
+  .admin-panel table{overflow:visible;font-size:9px}.admin-table-scroll{overflow:visible!important}
+  .admin-panel td{padding:6px 5px;font-size:9px}
+}

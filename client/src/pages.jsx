@@ -1,8 +1,10 @@
 import AddressBook from './address-book.jsx';
 import { WhyChooseUs, ShopDetails, FAQs, WixIntroduction, ProductIntroduction } from './business.jsx';
 import { tr, productText, useLanguage } from "./language.jsx";
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { PurchaseSteps, OrderTracker, paymentState, ORDER_STATUS_LABELS } from './shop-ui.jsx';
+import { haptic, prefersReducedMotion, useTween } from './interactions.jsx';
 import api, { errMsg } from './api';
 import { useAuth, useCart } from './context';
 import { SHOP } from './config';
@@ -26,7 +28,7 @@ function Card({
   p
 }) {
   return <div className="card">
-      <Link to={`/product/${p._id}`}><div className="product-image"><Img p={p} />{tr(p.mrp > p.price && <span className="discount">{tr(Math.round((1 - p.price / p.mrp) * 100))}{tr("% off")}</span>)}</div><h3>{productText(p)}</h3></Link>
+      <Link to={`/product/${p._id}`}><div className="product-image"><Img p={p} />{tr(p.mrp > p.price && <span className="discount">{tr(Math.round((1 - p.price / p.mrp) * 100))}{tr("% off")}</span>)}{p.stock > 0 && <span className={'fx-stock' + (p.stock <= 5 ? ' low' : '')}>{tr(p.stock <= 5 ? 'Only a few left' : 'In stock')}</span>}</div><h3>{productText(p)}</h3></Link>
       <p className="muted"><span className="category-label">{productText(p, "category")}</span> · {productText(p, "unit")}</p>
       <p><b>{tr(rs(p.price))}</b> {tr(p.mrp > p.price && <s className="muted">{tr(rs(p.mrp))}</s>)}</p>
       {p.stock > 0 ? <ProductPurchase key={p._id} product={p} compact /> : <NotifyButton product={p} />}
@@ -112,7 +114,7 @@ export function Shop() {
   return <>
       <div className="page-heading"><span className="eyebrow">{tr("THE RAIYANI SHOP")}</span><h1>{tr("Grow something good.")}</h1><p>{tr("Seeds, soil nutrition and the tools for a better season.")}</p></div>
       <ProductIntroduction />
-      <div className="shop-chips">{tr(['All products', ...categories.map(c => c[0])].map(c => <button key={c} className={(f.category || 'All products') === c ? 'selected' : ''} onClick={() => set('category', c === 'All products' ? '' : c)}>{tr(c)}</button>))}</div>
+      <CategoryChips value={f.category} onChange={value => set('category', value)} />
       <div className="bar">
         <input aria-label={tr("Search products")} placeholder={tr("Search products…")} value={f.search} onChange={e => set('search', e.target.value)} />
         <select aria-label={tr("Product category")} value={f.category} onChange={e => set('category', e.target.value)}>
@@ -127,6 +129,33 @@ export function Shop() {
         <button disabled={f.page <= 1} onClick={() => set('page', f.page - 1)}>{tr("Prev")}</button><span>{tr("Page ")}{tr(f.page)}{tr(" of ")}{tr(data.pages)}</span>
         <button disabled={f.page >= data.pages} onClick={() => set('page', f.page + 1)}>{tr("Next")}</button></div>)}
     </>;
+}
+// Category chips with a highlight that slides to the chosen chip (and keeps it in view on phones).
+function CategoryChips({ value, onChange }) {
+  const { language } = useLanguage();
+  const box = useRef(null), [mark, setMark] = useState(null);
+  const chips = ['All products', ...categories.map(c => c[0])], selected = value || 'All products';
+  useLayoutEffect(() => {
+    const container = box.current;
+    if (!container) return;
+    const place = () => {
+      const chip = container.querySelector('button.selected');
+      setMark(chip ? { x: chip.offsetLeft, y: chip.offsetTop, w: chip.offsetWidth, h: chip.offsetHeight } : null);
+    };
+    place();
+    const watch = 'ResizeObserver' in window ? new ResizeObserver(place) : null;
+    container.querySelectorAll('button').forEach(chip => watch?.observe(chip));
+    document.fonts?.ready.then(place).catch(() => {});
+    return () => watch?.disconnect();
+  }, [selected, language]);
+  useEffect(() => {
+    const container = box.current, chip = container?.querySelector('button.selected');
+    if (chip && container.scrollWidth > container.clientWidth) container.scrollTo({ left: chip.offsetLeft - (container.clientWidth - chip.offsetWidth) / 2, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }, [selected]);
+  return <div className={'shop-chips' + (mark ? ' has-mark' : '')} ref={box}>
+    {mark && <span className="chip-mark" aria-hidden="true" style={{ width: mark.w, height: mark.h, transform: `translate(${mark.x}px, ${mark.y}px)` }} />}
+    {chips.map(chip => <button key={chip} type="button" className={selected === chip ? 'selected' : ''} aria-pressed={selected === chip} onClick={() => { if (selected !== chip) haptic(8); onChange(chip === 'All products' ? '' : chip); }}>{tr(chip)}</button>)}
+  </div>;
 }
 export function Product() {
   const {
@@ -178,10 +207,12 @@ export function Cart() {
     saving
   } = useCart();
   const { language } = useLanguage();
+  // Totals count smoothly to their new value when quantities change.
+  const shownSubtotal = useTween(total), shownTotal = useTween(total + deliveryFee(total));
   if (!cartReady) return <div className="cart-page" aria-busy="true" aria-label={tr("Loading your account cart…")}><div className="skeleton cart-skeleton" /><div className="skeleton cart-skeleton short" /></div>;
   if (!items.length) return <div className="empty-state cart-empty"><Icon name="bag" size={40} /><h2>{tr("Your cart is empty")}</h2><p>{tr("Find seeds, fertilizers and tools for your next season.")}</p><Link className="btn" to="/shop">{tr("Browse products")}<Icon name="arrow" size={18} /></Link></div>;
   const fee = deliveryFee(total), remaining = FREE_DELIVERY_FROM - total;
-  return <div className="cart-page">
+  return <><PurchaseSteps current={0} /><div className="cart-page">
     <section className="cart-items"><div className="cart-title"><h1>{tr("Your cart")}</h1><p className="muted" role="status">{tr(saving ? 'Saving your cart…' : 'Your cart is saved to your account.')}</p></div>
       <div className={'delivery-progress' + (remaining <= 0 ? ' done' : '')}><p><Icon name="truck" size={18} /><span>{remaining > 0 ? (language === 'gu' ? <>મફત ડિલિવરી માટે <b>{rs(remaining)}</b> ની વધુ ખરીદી કરો</> : <>Add <b>{rs(remaining)}</b> more for free delivery</>) : tr("You have unlocked free delivery!")}</span></p><span className="delivery-bar" aria-hidden="true"><i style={{ width: Math.min(100, total / FREE_DELIVERY_FROM * 100) + '%' }} /></span></div>
       {items.map(i => <article className="cart-line" key={i.id}>
@@ -194,15 +225,19 @@ export function Cart() {
       <Link className="text-link cart-continue" to="/shop">← {tr("Continue shopping")}</Link>
     </section>
     <aside className="cart-summary" aria-label={tr("Order summary")}><h2>{tr("Order summary")}</h2>
-      <p><span>{tr("Subtotal")}</span><span>{tr(rs(total))}</span></p>
+      <p><span>{tr("Subtotal")}</span><span>{tr(rs(Math.round(shownSubtotal)))}</span></p>
       <p><span>{tr("Delivery")}</span><span>{fee ? tr(rs(fee)) : <b className="free">{tr("Free")}</b>}</span></p>
-      <p className="cart-summary-total"><span>{tr("Total")}</span><b>{tr(rs(total + fee))}</b></p>
+      <p className="cart-summary-total"><span>{tr("Total")}</span><b>{tr(rs(Math.round(shownTotal)))}</b></p>
       <Link className="btn" to="/checkout">{tr("Checkout")}<Icon name="arrow" size={18} /></Link>
       <small><Icon name="check" size={14} />{tr("Cash on Delivery or UPI payment")}</small>
       <small><Icon name="pin" size={14} />{tr("Your local Gondal shop")}</small>
     </aside>
-  </div>;
+  </div>
+  <div className="fx-buybar"><div className="fx-buybar-total"><small>{tr('Total')}</small><b>{tr(rs(Math.round(shownTotal)))}</b></div><Link className="btn fx-place" to="/checkout">{tr('Checkout')}<Icon name="arrow" size={18} /></Link></div>
+  </>;
 }
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const itemCount = count => tr(count === 1 ? '1 item' : '{count} items').replace('{count}', count);
 const FREE_DELIVERY_FROM = 500;
 const deliveryFee = total => total >= FREE_DELIVERY_FROM ? 0 : 40;
 export function Checkout() {
@@ -237,8 +272,16 @@ export function Checkout() {
       unavailable: true
     }));
   }, []);
+  // On phones the summary can be off-screen when the action bar is tapped, so bring any error into view.
+  const errorBox = useRef(null);
+  useEffect(() => {
+    if (error) errorBox.current?.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  }, [error]);
   const fee = deliveryFee(total);
   const place = async e => {
+    // The address editor is a portal inside this form, and React bubbles its submit event here.
+    // Only this form's own submit may place an order.
+    if (e.target !== e.currentTarget) return;
     e.preventDefault();
     setError('');
     setBusy(true);
@@ -287,7 +330,48 @@ export function Checkout() {
   if (invalidPurchase) return <p className="center" role="alert">{tr('Choose this product again to continue with your current account.')} <Link to="/shop">{tr('Browse products')}</Link></p>;
   if (!directPurchase && !cartReady) return <p className="center">{tr("Loading your account cart\u2026")}</p>;
   if (!items.length) return <p className="center">{tr("Your cart is empty. ")}<Link to="/shop">{tr("Browse products")}</Link></p>;
-  return <form className="box" onSubmit={place}><h1>{tr("Checkout")}</h1><section className="checkout-items" aria-label={tr('Order summary')}>{items.map(item => <div className="checkout-item" key={item.id}><span>{productText(item)} × {tr(item.qty)}</span><b>{tr(rs(item.price * item.qty))}</b></div>)}{directPurchase && <p className="muted">{tr('Your saved cart stays unchanged.')}</p>}</section><AddressBook checkout onSelect={setDelivery} /><InvoicePreferences user={user} phone={shipping.phone} whatsapp={invoiceWhatsApp} setWhatsapp={setInvoiceWhatsApp} /><h3>{tr("Choose payment")}</h3><div className="payment-choices"><label className={method === 'cod' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>{tr("Cash on Delivery")}</b><small>{tr("Pay when your order arrives")}</small></span></label><label className={method === 'upi' ? 'selected' : ''}><input type="radio" name="payment" checked={method === 'upi'} disabled={!options?.upi} onChange={() => setMethod('upi')} /><span><b>{tr("UPI QR payment")}</b><small>{tr("Scan and pay with your UPI app")}</small></span></label></div>{tr(!options ? <p className="muted">{tr("Checking payment options\u2026")}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null)}<div className="checkout-total"><span>{tr("Items ")}{tr(rs(total))}{tr(" + shipping ")}{tr(rs(fee))}</span><b>{tr(rs(total + fee))}</b></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<button disabled={busy || !delivery}>{tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order')}</button></form>;
+  const count = items.reduce((sum, item) => sum + item.qty, 0);
+  const upiReady = Boolean(options?.upi);
+  const action = tr(busy ? 'Please wait…' : method === 'upi' ? 'Place order & show QR' : 'Place order');
+  const goToAddress = () => document.getElementById('checkout-address')?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  return <form className="fx-checkout" onSubmit={place}>
+    <PurchaseSteps current={delivery ? 2 : 1} />
+    <header className="fx-page-title"><span className="eyebrow">{tr('ALMOST THERE')}</span><h1>{tr('Checkout')}</h1><p>{itemCount(count)} · {tr(rs(total + fee))}</p></header>
+    <div className="fx-checkout-grid">
+      <div className="fx-checkout-main">
+        <section className="fx-checkout-step" id="checkout-address" data-step="1"><AddressBook checkout onSelect={setDelivery} /></section>
+        <section className="fx-checkout-step" data-step="2" aria-labelledby="checkout-payment-title">
+          <span className="eyebrow">{tr('HOW YOU PAY')}</span><h2 id="checkout-payment-title">{tr('Choose payment')}</h2>
+          <div className="payment-choices">
+            <label className={'fx-pay-option' + (method === 'cod' ? ' selected' : '')}>
+              <input type="radio" name="payment" value="cod" checked={method === 'cod'} onChange={() => { setMethod('cod'); haptic(8); }} />
+              <span className="fx-pay-icon" aria-hidden="true"><Icon name="cash" size={26} /></span>
+              <span className="fx-pay-text"><b>{tr('Cash on Delivery')}</b><small>{tr('Pay when your order arrives')}</small><em>{tr('No advance payment needed.')}</em></span>
+            </label>
+            <label className={'fx-pay-option' + (method === 'upi' ? ' selected' : '') + (upiReady ? '' : ' is-disabled')}>
+              <input type="radio" name="payment" value="upi" checked={method === 'upi'} disabled={!upiReady} onChange={() => { setMethod('upi'); haptic(8); }} />
+              <span className="fx-pay-icon" aria-hidden="true"><Icon name="qr" size={26} /></span>
+              <span className="fx-pay-text"><b>{tr('UPI QR payment')}</b><small>{tr('Scan and pay with your UPI app')}</small><em>{tr('Works with any UPI app: Google Pay, PhonePe, Paytm, BHIM.')}</em></span>
+            </label>
+          </div>
+          {!options ? <p className="muted">{tr('Checking payment options…')}</p> : !options.upi ? <p className="muted">{tr(options.unavailable ? 'Payment options could not be checked. Please try again later.' : 'The shop’s receiving UPI account is not configured. Contact the shop or use Cash on Delivery.')}</p> : null}
+          <p className="fx-next"><Icon name="spark" size={17} /><span>{tr(method === 'upi' ? 'Next, you will see a QR code and a Pay with UPI app button. The shop confirms your order after checking the payment.' : 'We will prepare your order. Pay in cash when it arrives.')}</span></p>
+        </section>
+        <section className="fx-checkout-step" data-step="3"><InvoicePreferences user={user} phone={shipping.phone} whatsapp={invoiceWhatsApp} setWhatsapp={setInvoiceWhatsApp} /></section>
+      </div>
+      <aside className="fx-summary" aria-label={tr('Order summary')}>
+        <h2>{tr('Order summary')}</h2>
+        <ul className="fx-summary-items">{items.map(item => <li key={item.id}><span className="fx-thumb" aria-hidden="true">{item.image ? <img src={item.image} alt="" loading="lazy" /> : <Icon name="leaf" size={18} />}</span><span className="fx-summary-name">{productText(item)}<small>× {tr(item.qty)}</small></span><b>{tr(rs(item.price * item.qty))}</b></li>)}</ul>
+        {directPurchase && <p className="muted">{tr('Your saved cart stays unchanged.')}</p>}
+        <dl className="fx-summary-lines"><div><dt>{tr('Subtotal')}</dt><dd>{tr(rs(total))}</dd></div><div><dt>{tr('Delivery')}</dt><dd>{fee ? tr(rs(fee)) : <b className="free">{tr('Free')}</b>}</dd></div><div className="fx-summary-total"><dt>{tr('Total')}</dt><dd>{tr(rs(total + fee))}</dd></div></dl>
+        {error && <p className="err" role="alert" ref={errorBox}>{tr(error)}</p>}
+        {!delivery && <p className="fx-hint"><Icon name="pin" size={16} /><span>{tr('Choose or add a delivery address to continue.')}</span><button type="button" className="link" onClick={goToAddress}>{tr('Go to address')}</button></p>}
+        <button type="submit" className="fx-place" disabled={busy || !delivery}>{action}<Icon name="arrow" size={18} /></button>
+        <ul className="fx-assure"><li><Icon name="check" size={15} />{tr('You can cancel before it ships.')}</li><li><Icon name="pin" size={15} />{tr('Your local Gondal shop')}</li></ul>
+      </aside>
+    </div>
+    <div className="fx-buybar"><div className="fx-buybar-total"><small>{tr('Total')}</small><b>{tr(rs(total + fee))}</b></div>{delivery ? <button type="submit" className="fx-place" disabled={busy}>{action}<Icon name="arrow" size={18} /></button> : <button type="button" className="fx-place is-guide" onClick={goToAddress}><Icon name="pin" size={18} />{tr('Add delivery address')}</button>}</div>
+  </form>;
 }
 export function MyOrders() {
   const loc = useLocation();
@@ -322,10 +406,44 @@ export function MyOrders() {
       setBusy('');
     }
   };
-  return <div className="box wide"><div className="orders-heading"><h1>{tr("My orders")}</h1><button className="secondary" disabled={Boolean(busy)} onClick={() => {
-        setError('');
-        load();
-      }}>{tr("Refresh orders")}</button></div>{tr(qrOrder && <PaymentQR orderId={qrOrder} onClose={() => setQrOrder(null)} onSubmitted={load} />)} {tr(loc.state?.placed && !loc.state?.paymentMessage && <p className="ok">{tr("Thank you! Your order was placed.")}</p>)}{tr(message && <p className="payment-note" role="status">{tr(message)}</p>)}{tr(error && <p className="err" role="alert">{tr(error)}</p>)}{tr(!orders ? <p className="center">{tr(error ? 'Could not load orders. Use Refresh orders to retry.' : 'Loading…')}</p> : !orders.length ? <p>{tr("No orders yet. ")}<Link to="/shop">{tr("Browse the shop")}</Link></p> : orders.map(o => <div className="order" key={o._id}><div className="row"><b>#{tr(o._id.slice(-8).toUpperCase())}</b><span>{tr(new Date(o.createdAt).toLocaleDateString('en-IN'))}</span><span className={'tag ' + o.orderStatus}>{tr(o.orderStatus)}</span><span className="tag">{tr(o.paymentMethod === 'upi' ? 'UPI QR' : o.paymentMethod === 'cod' ? 'COD' : 'Online')} · {tr(o.paymentStatus)}</span><b>{tr(rs(o.totalAmount))}</b></div><ul>{tr(o.items.map((i, k) => <li key={k}>{productText(i)} × {tr(i.qty)}</li>))}</ul>{tr(refundText(o) && <p className="payment-note">{tr(refundText(o))}</p>)}{tr(o.paymentReference && <p className="muted">{tr("UPI reference: ")}{o.paymentReference}{tr(o.paymentStatus === 'pending' ? ' · Awaiting shop verification' : '')}</p>)}{tr(o.cancelledBy && <p className="muted">{tr("Cancelled by ")}{tr(o.cancelledBy === 'admin' ? 'the shop' : 'you')}.</p>)}<div className="order-actions"><InvoiceButton orderId={o._id}/>{tr(o.paymentMethod === 'upi' && ['pending', 'failed'].includes(o.paymentStatus) && ['placed', 'confirmed'].includes(o.orderStatus) && <button disabled={Boolean(busy)} onClick={() => setQrOrder(o._id)}>{tr("Show payment QR")}</button>)}{tr((['placed', 'confirmed'].includes(o.orderStatus) || o.orderStatus === 'cancelled' && o.cancelledAt && o.stockRestored === false) && <button className="cancel-button" disabled={Boolean(busy)} onClick={() => cancel(o)}>{tr(busy === o._id ? 'Please wait…' : o.orderStatus === 'cancelled' ? 'Complete cancellation' : 'Cancel order')}</button>)}</div></div>))}</div>;
+  const placedUpi = Boolean(loc.state?.qrOrder);
+  return <div className="box wide fx-orders">
+    <div className="orders-heading"><div><span className="eyebrow">{tr('YOUR PURCHASES')}</span><h1>{tr('My orders')}</h1></div><button className="secondary" disabled={Boolean(busy)} onClick={() => { setError(''); load(); }}><Icon name="refresh" size={16} />{tr('Refresh orders')}</button></div>
+    {loc.state?.placed && !loc.state?.paymentMessage && <section className="fx-success" role="status"><span className="fx-success-icon" aria-hidden="true"><Icon name="check" size={26} /></span><div><h2>{tr('Thank you! Your order was placed.')}</h2><p>{tr(placedUpi ? 'Complete your UPI payment below. The shop confirms your order after checking the payment.' : 'We will prepare your order. Pay in cash when it arrives.')}</p></div></section>}
+    {qrOrder && <PaymentQR orderId={qrOrder} onClose={() => setQrOrder(null)} onSubmitted={load} />}
+    {message && <p className="payment-note" role="status">{tr(message)}</p>}
+    {error && <p className="err" role="alert">{tr(error)}</p>}
+    {!orders ? <p className="center">{tr(error ? 'Could not load orders. Use Refresh orders to retry.' : 'Loading…')}</p>
+      : !orders.length ? <div className="empty-state"><Icon name="receipt" size={34} /><h3>{tr('No orders yet.')}</h3><p>{tr('Your purchases will appear here after you place an order.')}</p><Link className="btn" to="/shop">{tr('Browse the shop')}<Icon name="arrow" size={18} /></Link></div>
+      : <div className="fx-order-list">{orders.map(o => <OrderCard key={o._id} order={o} busy={busy} fresh={loc.state?.placed === o._id} onPay={setQrOrder} onCancel={cancel} />)}</div>}
+  </div>;
+}
+function OrderCard({ order: o, busy, fresh, onPay, onCancel }) {
+  const { language } = useLanguage();
+  const [payLabel, payTone] = paymentState(o);
+  const canPay = o.paymentMethod === 'upi' && ['pending', 'failed'].includes(o.paymentStatus) && ['placed', 'confirmed'].includes(o.orderStatus);
+  const canCancel = ['placed', 'confirmed'].includes(o.orderStatus) || o.orderStatus === 'cancelled' && o.cancelledAt && o.stockRestored === false;
+  return <article className={'order fx-order' + (fresh ? ' is-fresh' : '') + (o.orderStatus === 'cancelled' ? ' is-cancelled' : '')}>
+    <header className="fx-order-head">
+      <div><span className="fx-order-id">#{o._id.slice(-8).toUpperCase()}</span><time dateTime={o.createdAt}>{new Date(o.createdAt).toLocaleDateString(language === 'gu' ? 'gu-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</time></div>
+      <b className="fx-order-total">{tr(rs(o.totalAmount))}</b>
+    </header>
+    <div className="fx-order-pills">
+      <span className={'tag ' + o.orderStatus}>{tr(ORDER_STATUS_LABELS[o.orderStatus] || o.orderStatus)}</span>
+      <span className="fx-pill"><Icon name={o.paymentMethod === 'upi' ? 'qr' : 'cash'} size={14} />{tr(o.paymentMethod === 'upi' ? 'UPI' : o.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online')}</span>
+      {payLabel && <span className={'fx-pill is-' + payTone}>{tr(payLabel)}</span>}
+    </div>
+    <OrderTracker status={o.orderStatus} />
+    <ul className="fx-order-items">{o.items.map((i, k) => <li key={k}><span>{productText(i)}</span><small>× {tr(i.qty)}</small></li>)}</ul>
+    {refundText(o) && <p className="payment-note">{tr(refundText(o))}</p>}
+    {o.paymentReference && <p className="muted">{tr('UPI reference: ')}{o.paymentReference}{tr(o.paymentStatus === 'pending' ? ' · Awaiting shop verification' : '')}</p>}
+    {o.cancelledBy && <p className="muted">{tr('Cancelled by ')}{tr(o.cancelledBy === 'admin' ? 'the shop' : 'you')}.</p>}
+    {(canPay || canCancel) && <div className="order-actions fx-order-actions">
+      {canPay && <button type="button" className={o.paymentReference ? 'secondary' : 'fx-pay-now'} disabled={Boolean(busy)} onClick={() => onPay(o._id)}><Icon name="qr" size={18} />{o.paymentReference ? tr('Show payment QR') : <>{tr('Pay now')} · {tr(rs(o.totalAmount))}</>}</button>}
+      {canCancel && <button type="button" className="cancel-button" disabled={Boolean(busy)} onClick={() => onCancel(o)}>{tr(busy === o._id ? 'Please wait…' : o.orderStatus === 'cancelled' ? 'Complete cancellation' : 'Cancel order')}</button>}
+    </div>}
+    <div className="fx-order-invoice"><span className="fx-order-invoice-label"><Icon name="receipt" size={15} />{tr('Invoice')}</span><InvoiceButton orderId={o._id} compact /></div>
+  </article>;
 }
 export function Account() { const { user } = useAuth(); return <AccountProfile key={user.id} />; }
 export function Contact() {

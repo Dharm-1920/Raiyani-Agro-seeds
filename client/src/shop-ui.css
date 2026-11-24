@@ -1,0 +1,226 @@
+/* Checkout steps, payment choices, order tracker, UPI payment panel, phone dock and purchase bar,
+   styled in the shop's original forest green, parchment and brass. Components live in shop-ui.jsx,
+   pages.jsx and payment.jsx. */
+
+/* Secondary actions use the light outline style (same as admin.css) so the main action stands out. */
+html[data-fx] .secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fffef7;color:#375d3c;border:1px solid #d8dfcc}
+html[data-fx] .secondary:hover:not(:disabled){background:#e7eddc;color:#375d3c}
+html[data-fx] a.secondary{padding:10px 17px;border-radius:30px;font-size:12px;font-weight:600}
+
+/* ---------- Purchase steps: Cart → Delivery → Payment → Done ---------- */
+.fx-steps{list-style:none;display:flex;align-items:center;margin:6px auto 26px;padding:10px 16px;max-width:640px;border:1px solid var(--line);border-radius:40px;background:#fffef9}
+.fx-step{flex:1;display:flex;align-items:center;gap:9px;min-width:0;color:#8a917f;font-size:13px;font-weight:600}
+.fx-step:not(:last-child)::after{content:'';flex:1;height:2px;min-width:10px;margin:0 6px;border-radius:2px;background:#e1e4d6;transition:background .4s}
+.fx-step.is-done:not(:last-child)::after{background:#6f8f5b}
+.fx-step-dot{flex-shrink:0;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1.5px solid #d3d9c8;background:#fff;font-size:12px;color:#8a917f;transition:background .3s,border-color .3s,color .3s,box-shadow .3s}
+.fx-step-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-step.is-done{color:#4f6646}
+.fx-step.is-done .fx-step-dot{background:#e4ecda;border-color:#9db28a;color:#2f5a3a}
+.fx-step.is-current{color:var(--t)}
+.fx-step.is-current .fx-step-dot{background:var(--g);border-color:var(--g);color:#fff8e8;box-shadow:0 0 0 4px #234b361a}
+
+/* ---------- Checkout ---------- */
+.fx-checkout{max-width:1180px;margin:0 auto}
+.fx-page-title{text-align:center;margin:0 0 26px}
+.fx-page-title .eyebrow{justify-content:center}
+.fx-page-title h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(32px,4vw,46px);letter-spacing:-1.4px;margin:12px 0 6px}
+.fx-page-title p{margin:0;color:var(--m);font-size:13px}
+.fx-checkout-grid{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:24px;align-items:start}
+.fx-checkout-main{display:grid;gap:18px;min-width:0}
+.fx-checkout-step{position:relative;min-width:0;padding:26px 26px 26px 76px;background:#fffef9;border:1px solid var(--line);border-radius:16px;scroll-margin-top:140px}
+.fx-checkout-step::before{content:attr(data-step);position:absolute;left:24px;top:24px;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff8e8;font-family:Georgia,serif;font-size:16px}
+.fx-checkout-step h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;letter-spacing:-.5px;margin:8px 0 4px}
+.fx-checkout-step .address-book-checkout{border:0;padding:0;margin:0;background:none}
+.fx-checkout-step .checkout-invoice-note{margin:0;padding:0;background:none;border:0}
+.fx-checkout-step .checkout-invoice-note strong{display:flex;align-items:center;gap:8px;font-size:17px}
+.payment-choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0 14px}
+.payment-choices label.fx-pay-option{position:relative;display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:start;gap:14px;margin:0;padding:18px;border:1px solid #dfe5d6;border-radius:14px;background:#fafbf5;cursor:pointer;transition:border-color .25s,background-color .25s,box-shadow .25s,transform .25s}
+.payment-choices label.fx-pay-option:hover{border-color:#9db28a}
+.payment-choices label.fx-pay-option.selected{border-color:#5f8650;background:#eef3e5;box-shadow:0 0 0 3px #5f86501f}
+.payment-choices label.fx-pay-option.is-disabled{opacity:.55;cursor:not-allowed}
+.fx-pay-option input[type=radio]{margin-top:13px;width:18px;height:18px;accent-color:var(--g)}
+.fx-pay-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:#fff;border:1px solid #dfe5d6;color:#5c7a4c;transition:background-color .3s,color .3s,border-color .3s}
+.fx-pay-option.selected .fx-pay-icon{background:var(--g);border-color:var(--g);color:#f3e8bc}
+.fx-pay-text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fx-pay-text b{font-size:15px;color:var(--t)}
+.payment-choices .fx-pay-text small{margin:0;font-size:12.5px;color:#5f6d57}
+.fx-pay-text em{font-style:normal;font-size:12px;line-height:1.5;color:#7b896d}
+.fx-next{display:flex;align-items:flex-start;gap:10px;margin:0;padding:12px 14px;border-radius:12px;background:#f2eedc;color:#6b6238;font-size:13px;line-height:1.6}
+.fx-next svg{flex-shrink:0;margin-top:2px;color:#8c794c}
+.fx-summary{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px;padding:26px;background:#fffef8;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px #243b2b0d}
+.fx-summary h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:24px;letter-spacing:-.5px;margin:0}
+.fx-summary-items{list-style:none;margin:0;padding:0;display:grid;gap:12px;max-height:280px;overflow:auto}
+.fx-summary-items li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;font-size:14px}
+.fx-thumb{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse,#fffdf4,#eaeedd);color:#7a9466}
+.fx-thumb img{width:100%;height:100%;object-fit:cover}
+.fx-summary-name{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}
+.fx-summary-name small{color:var(--m);font-size:11.5px}
+.fx-summary-lines{margin:0;padding:14px 0 0;border-top:1px solid var(--line);display:grid;gap:8px}
+.fx-summary-lines>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.fx-summary-lines dt{color:#56604f;font-size:14px}
+.fx-summary-lines dd{margin:0;font-variant-numeric:tabular-nums}
+.fx-summary .free{color:#2e7a43}
+.fx-summary-total{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.fx-summary-total dt{color:var(--t);font-weight:700;font-size:16px}
+.fx-summary-total dd{font-size:26px;font-weight:700;letter-spacing:-.5px}
+.fx-hint{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0;padding:12px 14px;border-radius:12px;background:#f2eedc;color:#6b6238;font-size:13px;line-height:1.5}
+.fx-hint>span{flex:1 1 160px}
+.fx-place{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:15px 22px;font-size:15px;border-radius:30px}
+.fx-assure{list-style:none;margin:0;padding:0;display:grid;gap:8px;color:#6f7967;font-size:12px}
+.fx-assure li{display:flex;align-items:center;gap:8px}
+.fx-assure svg{flex-shrink:0;color:#6b8a58}
+.fx-buybar,.fx-dock{display:none}
+
+/* ---------- Product cards: stock badge ---------- */
+.fx-stock{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:#fffef6;border:1px solid #e3e8d9;color:#3f6b45;font-size:9.5px;font-weight:600}
+.fx-stock::before{content:'';width:6px;height:6px;border-radius:50%;background:#3f8a52}
+.fx-stock.low{color:#8a5d10}
+.fx-stock.low::before{background:#d08a1c}
+
+/* ---------- My orders ---------- */
+.box.fx-orders{max-width:1000px;padding:0;background:none;border:0;box-shadow:none}
+.fx-orders .orders-heading{margin:10px 0 22px}
+.fx-orders .orders-heading h1{margin:10px 0 0!important}
+.fx-orders .orders-heading .secondary{gap:8px}
+.fx-success{display:flex;align-items:center;gap:18px;margin:0 0 20px;padding:20px 22px;border-radius:16px;background:#edf5e8;border:1px solid #cfe2c5}
+.fx-success h2{margin:0 0 4px;font-family:Georgia,serif;font-weight:400;font-size:22px;color:#2e5c39}
+.fx-success p{margin:0;color:#4f6646;font-size:14px}
+.fx-success-icon{flex-shrink:0;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--g);color:#fff8e8}
+.fx-order-list{display:grid;gap:16px}
+.order.fx-order{margin:0;padding:22px 24px;background:#fffef9;border:1px solid var(--line);border-radius:16px;font-size:14px}
+.fx-order.is-fresh{border-color:#9db28a;box-shadow:0 0 0 3px #5f86501f}
+.fx-order.is-cancelled{opacity:.8}
+.fx-order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.fx-order-head>div{display:flex;flex-direction:column;gap:4px}
+.fx-order-id{font-size:15px;font-weight:700;letter-spacing:.5px}
+.fx-order-head time{font-size:12.5px;color:var(--m)}
+.fx-order-total{font-size:22px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.fx-order-pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.fx-order-pills .tag{font-weight:600}
+.tag.placed{background:#f6ecd2;color:#8a6a1f}
+.tag.confirmed{background:#e4eee9;color:#2f6a55}
+.tag.shipped{background:#e3ecf3;color:#2f5a7a}
+.fx-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;color:#56604f;background:#f1f3ea}
+.fx-pill.is-ok{background:#dcebd7;color:#2f6b3f}
+.fx-pill.is-warn{background:#f6ecd2;color:#8a6a1f}
+.fx-pill.is-bad{background:#fbe8e1;color:#a14935}
+.fx-pill.is-info{background:#e4eee9;color:#2f6a55}
+.fx-track{--fx-progress:0;position:relative;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:20px 0 8px;padding:0}
+.fx-track::before,.fx-track::after{content:'';position:absolute;top:10px;left:12.5%;height:3px;border-radius:3px}
+.fx-track::before{right:12.5%;background:#e6e8dc}
+.fx-track::after{width:calc(75% * var(--fx-progress));background:linear-gradient(90deg,#3f7a4d,#86a85f)}
+.fx-track li{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center;color:#9aa08f;font-size:12px;font-weight:600}
+.fx-track-node{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#fff;border:2px solid #d6dbcb;color:#fff}
+.fx-track li.is-done{color:#4f6646}
+.fx-track li.is-done .fx-track-node{background:#3f7a4d;border-color:#3f7a4d}
+.fx-track li.is-current{color:var(--g)}
+.fx-track li.is-current .fx-track-node{background:var(--g);border-color:var(--g);box-shadow:0 0 0 5px #234b361f}
+.fx-track-label{line-height:1.3;overflow-wrap:anywhere}
+.fx-order-items{list-style:none;margin:16px 0 6px;padding:12px 0 0;border-top:1px solid var(--line);display:grid;gap:6px}
+.fx-order-items li{display:flex;justify-content:space-between;gap:12px}
+.fx-order-items small{color:var(--m);white-space:nowrap}
+.fx-order .muted{margin:8px 0 0}
+.fx-order-actions{margin-top:16px;gap:10px}
+.fx-order-actions button{font-size:13px;padding:12px 20px;min-height:44px}
+.fx-order-invoice{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px 14px;margin-top:18px;padding-top:14px;border-top:1px dashed #d9ddcd}
+.fx-order-invoice-label{display:inline-flex;align-items:center;gap:7px;min-height:38px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8c805d}
+.fx-order-invoice .invoice-actions{flex:1;min-width:0}
+.fx-order-invoice .secondary{font-size:12px;padding:8px 14px;min-height:38px}
+
+/* ---------- UPI payment panel ---------- */
+.payment-qr.fx-upi{max-width:none;margin:0 0 22px;padding:24px;text-align:left;background:#fffdf6;border:1px solid #d8dfce;border-radius:18px;scroll-margin-top:110px}
+.fx-upi-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.fx-upi-head>div{flex:1;min-width:0}
+.fx-upi-head h2{margin:0;font-family:Georgia,serif;font-weight:400;font-size:26px;letter-spacing:-.5px}
+.fx-upi-head h2:focus{outline:none}
+.fx-upi-head small{color:var(--m)}
+.fx-upi-badge{display:grid;place-items:center;flex-shrink:0;width:46px;height:46px;border-radius:12px;background:var(--g);color:#f3e8bc}
+.fx-upi-steps{list-style:none;margin:18px 0 0;padding:0}
+.fx-upi-step{position:relative;padding:0 0 26px 50px}
+.fx-upi-step:not(:last-child)::before{content:'';position:absolute;left:16px;top:38px;bottom:6px;width:2px;border-radius:2px;background:#dfe5d6}
+.fx-upi-step h3{display:flex;align-items:center;gap:12px;margin:0 0 14px -50px;font-size:17px}
+.fx-num{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff8e8;font-family:Georgia,serif;font-size:15px}
+.fx-upi-pay{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:start}
+.fx-qr{margin:0;padding:14px;width:min(256px,100%);border-radius:16px;background:#fff;border:1px solid #e1e6d6;text-align:center}
+.payment-qr .fx-qr img{display:block;width:100%;max-width:228px;height:auto;margin:0 auto}
+.fx-qr figcaption{margin-top:8px;font-size:11.5px;line-height:1.45;color:#5f6d57}
+.fx-upi-details{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0}
+.fx-upi-details dl{margin:0;display:grid;gap:12px;width:100%}
+.fx-upi-details dl>div{display:grid;gap:3px}
+.fx-upi-details dt{font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#8c805d}
+.fx-upi-details dd{margin:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.fx-upi-details .fx-upi-amount{font-size:34px;font-weight:700;letter-spacing:-1px;color:var(--g)}
+.fx-upi-id{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.fx-upi-id code{font-size:15px;padding:7px 11px;border-radius:8px;background:#f2f4eb;border:1px solid #dfe3d4;user-select:all;overflow-wrap:anywhere}
+.fx-copy.secondary{min-height:36px;padding:7px 13px;font-size:12px}
+.fx-copy.is-copied{background:#dcebd7;border-color:#9db28a}
+.payment-qr a.fx-upi-app{display:inline-flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 0;width:100%;max-width:340px;padding:15px 24px;font-size:15px}
+.fx-tip{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:13px;line-height:1.55;color:#5f6d57}
+.fx-tip svg{flex-shrink:0;margin-top:2px;color:#6b8a58}
+.payment-qr .text-link{margin:0}
+.payment-qr form{max-width:520px}
+.payment-qr label{margin:14px 0 10px;font-size:13.5px}
+.fx-utr{position:relative;display:block;margin-top:8px}
+.payment-qr .fx-utr input{margin:0;min-height:54px;padding:12px 70px 12px 16px;font-size:20px;letter-spacing:3px;font-variant-numeric:tabular-nums}
+.payment-qr .fx-utr input::placeholder{font-size:14px;letter-spacing:0}
+.fx-utr-count{position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:3px 8px;border-radius:20px;background:#f1f3ea;color:var(--m);font-size:12px;font-variant-numeric:tabular-nums}
+.fx-utr-count.is-complete{background:var(--g);color:#fff8e8}
+.fx-help{margin:4px 0 16px;padding:12px 14px;border-radius:12px;border:1px solid #e1e6d6;background:#fafbf5}
+.fx-help summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:#3f6b45;font-weight:600;font-size:13.5px;list-style:none}
+.fx-help summary::-webkit-details-marker{display:none}
+.fx-help ol{margin:10px 0 0;padding-left:22px;color:#5f6d57;font-size:13.5px;line-height:1.75}
+.payment-qr form>button{min-height:50px;padding:13px 24px}
+.fx-upi-step>p{margin:0;color:#5f6d57;line-height:1.65}
+
+@media(max-width:1100px){.fx-checkout-grid{grid-template-columns:minmax(0,1fr) 330px}.payment-choices{grid-template-columns:1fr}}
+@media(max-width:960px){.fx-checkout-grid{grid-template-columns:1fr}.fx-summary{position:static}.fx-upi-pay{grid-template-columns:1fr}.fx-qr{margin:0 auto}.fx-upi-details{align-items:stretch}.payment-qr a.fx-upi-app{max-width:none}}
+@media(max-width:760px){
+  /* Bottom dock: the five places shoppers use most */
+  .fx-dock{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:70;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:6px;border-radius:22px;background:#fffef8f0;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid #dfe3d3;box-shadow:0 14px 34px #173c2826}
+  .fx-dock-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:52px;padding:6px 2px;border-radius:16px;color:#5f6f58;font-size:11px;font-weight:600;text-decoration:none;transition:background-color .25s,color .25s}
+  .fx-dock-item.active{background:var(--g);color:#fff8e8}
+  .fx-dock-icon{position:relative;display:grid;place-items:center}
+  .fx-dock-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+  .fx-dock-badge{position:absolute;top:-7px;right:-12px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#e8d89e;color:#24452d;font-size:10px;font-weight:800;box-shadow:0 0 0 2px #fffef8;animation:bag-count .45s ease-out}
+  html[data-dock] .floating-cart{display:none}
+  html[data-dock] body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+  /* Cart and checkout: total and the main button always in reach */
+  .fx-buybar{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:70;display:flex;align-items:center;gap:12px;padding:9px 9px 9px 18px;border-radius:22px;background:#fffef8f2;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid #dfe3d3;box-shadow:0 14px 34px #173c2830}
+  .fx-buybar-total{display:flex;flex-direction:column;min-width:0}
+  .fx-buybar-total small{font-size:11px;color:var(--m)}
+  .fx-buybar-total b{font-size:20px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .fx-buybar .fx-place{flex:1;width:auto;min-height:52px;margin:0;padding:12px 16px}
+  .fx-buybar .fx-place.is-guide{background:#e8d5a0;color:#233f2a}
+  .fx-summary .fx-place,.cart-summary .btn{display:none}
+  .fx-checkout,.cart-page{padding-bottom:84px}
+  .fx-steps{margin:4px 0 20px;padding:8px 10px;border-radius:20px}
+  .fx-step{flex:1 1 0;gap:6px;font-size:12px}
+  .fx-step.is-current{flex:0 0 auto}
+  .fx-step.is-current:not(:last-child)::after{flex:0 0 16px;min-width:16px}
+  .fx-step.is-current .fx-step-label{overflow:visible}
+  .fx-step:not(.is-current) .fx-step-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .fx-step-dot{width:26px;height:26px}
+  .fx-checkout-step{padding:18px 16px;border-radius:14px}
+  .fx-checkout-step::before{left:auto;right:14px;top:14px;width:30px;height:30px;font-size:14px}
+  .fx-checkout-step>.eyebrow,.fx-checkout-step .account-panel-heading>div,.fx-checkout-step .checkout-invoice-note>strong{padding-right:40px}
+  .payment-choices label.fx-pay-option{padding:15px;gap:12px}
+  .fx-pay-icon{width:42px;height:42px}
+  .fx-summary{padding:20px}
+  .order.fx-order{padding:18px 16px}
+  .fx-order-total{font-size:19px}
+  .fx-track li{font-size:10.5px}
+  .fx-order-actions button{flex:1 1 100%}
+  .fx-success{padding:16px;gap:14px}
+  .payment-qr.fx-upi{padding:18px 14px}
+  .fx-upi-head{flex-wrap:wrap}
+  .fx-upi-close{order:3;width:100%}
+  .fx-upi-step{padding-left:0}
+  .fx-upi-step:not(:last-child)::before{display:none}
+  .fx-upi-step h3{margin-left:0;font-size:16px}
+  /* On a phone the app button is the easy path (you can't scan your own screen), so it comes first. */
+  .fx-upi-pay{display:flex;flex-direction:column;gap:20px}
+  .fx-upi-details{order:-1}
+  .fx-upi-details .fx-upi-amount{font-size:30px}
+  .payment-qr .fx-utr input{font-size:17px;letter-spacing:2px}
+  .fx-stock{top:7px;right:7px;font-size:8.5px;padding:3px 7px}
+}

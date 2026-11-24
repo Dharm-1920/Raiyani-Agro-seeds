@@ -1,0 +1,42 @@
+/* Admin work tools: today's summary, filter chips, quick stock and contact links. Same palette as admin.css. */
+.admin-today{display:grid;grid-template-columns:minmax(170px,auto) 1fr;gap:18px;margin-bottom:22px}
+.admin-today-summary{background:#173c28;color:#f7f2dd;border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;justify-content:center}
+.admin-today-summary .eyebrow{color:#d7cf9a;font-size:9px;letter-spacing:2px}
+.admin-today-summary b{font-family:Georgia,serif;font-weight:400;font-size:38px;letter-spacing:-1px;margin:8px 0 2px;line-height:1}
+.admin-today-summary>span:last-child{font-size:12px;color:#c9d6bd}
+.admin-attention{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-content:start}
+.admin-attention button{display:flex;align-items:center;gap:14px;text-align:left;background:#fffef8;color:#24492c;border:1px solid #e1e5d6;border-left:4px solid #c79a3a;border-radius:10px;padding:15px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.admin-attention button:hover{background:#fffef8;color:#24492c;border-color:#d7c48c;transform:translateY(-2px);box-shadow:0 8px 20px -14px #173c2866}
+.admin-attention button>svg:first-child{flex:none;color:#a77927}
+.admin-attention button>svg:last-child{flex:none;margin-left:auto;color:#91a466}
+.admin-attention button b{font-size:17px;margin-right:2px}
+.admin-attention small{display:block;font-weight:400;font-size:10px;color:#86907a;margin-top:4px;line-height:1.5}
+.admin-all-clear{display:flex;align-items:center;gap:10px;margin:0;background:#eef3e3;border:1px solid #dce5cb;color:#4c6b40;border-radius:10px;padding:18px;font-size:13px}
+
+.admin-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 4px;scrollbar-width:thin}
+.admin-chips button{flex:none;display:inline-flex;align-items:center;gap:7px;background:#f3f5eb;color:#4e6544;border:1px solid #dfe5d2;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s ease,color .15s ease}
+.admin-chips button:hover{background:#e7eddc;color:#375d3c}
+.admin-chips button.is-status{text-transform:capitalize}
+.admin-chips button span{background:#fffef8;color:#6f7f5e;border-radius:999px;padding:1px 8px;font-size:10px;min-width:20px;text-align:center}
+.admin-chips button.needs-work span{background:#f3e2b5;color:#8a5f14}
+.admin-chips button[aria-pressed=true]{background:#173c28;color:#f7f2dd;border-color:#173c28}
+.admin-chips button[aria-pressed=true] span{background:#e7d395;color:#24492c}
+
+.stock-stepper{display:inline-flex;align-items:center;border:1px solid #dfe5d2;border-radius:8px;background:#fffef8;overflow:hidden}
+.admin-panel td .stock-stepper button{background:transparent;color:#375d3c;border:0;border-radius:0;padding:6px 11px;font-size:15px;line-height:1;min-width:0;cursor:pointer}
+.admin-panel td .stock-stepper button:hover:not(:disabled){background:#e7eddc}
+.admin-panel td .stock-stepper button:disabled{opacity:.35;cursor:not-allowed}
+.stock-stepper b{min-width:34px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;border-left:1px solid #eceee4;border-right:1px solid #eceee4;padding:5px 4px}
+.admin-panel td .stock-add{display:block;margin-top:6px;font-size:10px}
+
+.admin-contact{display:flex;gap:12px;margin-top:8px;font-size:11px}
+.admin-contact a{display:inline-flex;align-items:center;gap:4px;color:#375d3c;font-weight:600}
+
+@media(max-width:760px){
+  .admin-today{grid-template-columns:1fr;gap:12px}
+  .admin-today-summary{flex-direction:row;align-items:baseline;gap:10px;padding:16px 18px}
+  .admin-today-summary b{font-size:30px;margin:0}
+  .admin-attention{grid-template-columns:1fr}
+  .admin-panel td .stock-stepper button{padding:9px 14px}
+}
+@media(prefers-reduced-motion:reduce){.admin-attention button,.admin-chips button{transition:none}.admin-attention button:hover{transform:none}}

@@ -1,7 +1,9 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express'), jwt = require('jsonwebtoken');
-const { User, CounterBill, Expense, JournalEntry } = require('../models');
+const { User, CounterBill, Expense, JournalEntry, Purchase, SupplierPayment } = require('../models');
+Purchase.find = () => ({ lean: async () => [] });
+SupplierPayment.find = () => ({ lean: async () => [] });
 const admin = '000000000000000000000001', customer = '000000000000000000000002';
 let journals, server, base;
 User.findById = id => ({ select: async () => [admin, customer].includes(String(id)) ? { _id: id, role: String(id) === admin ? 'admin' : 'user' } : null });

@@ -100,6 +100,7 @@ function buildBooks(bills, expenses, range = {}) {
     if (balanceCents > 0) dues.push({ id: String(bill._id), reference: ref, customer: bill.shipping?.name || '', phone: bill.shipping?.phone || '', totalCents, paidCents, balanceCents, createdAt: bill.createdAt, remindersEnabled: Boolean(bill.remindersEnabled), nextReminderAt: bill.nextReminderAt });
   }
   for (const expense of expenses) {
+    if (expense.voidedAt) continue;
     if (within(expense.occurredAt)) expenseCents += expense.amountCents;
     posting('expense-' + expense._id, expense.occurredAt, 'EX-' + String(expense._id).toUpperCase(), expense.description, expense.payee || '', 'Expense: ' + expense.category, accounts[expense.method], expense.amountCents, 'expense');
   }

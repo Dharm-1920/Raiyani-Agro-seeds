@@ -18,6 +18,11 @@ import './purchase.css';
 import './mobile.css';
 import './action-buttons.css';
 import './admin-ux.css';
+// Checkout/order/payment components and storefront interactions; keep these last.
+import './shop-ui.css';
+import './interactions.css';
+// Storefront theme (customer pages only); keep it last.
+import './theme.css';
 createRoot(document.getElementById('root')).render(
   <ErrorBoundary><BrowserRouter><Providers><NotificationProvider><App /></NotificationProvider></Providers></BrowserRouter></ErrorBoundary>
 );

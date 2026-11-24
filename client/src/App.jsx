@@ -4,7 +4,9 @@ import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from
 import { useAuth, useCart } from './context';
 import { SHOP } from './config';
 import { Home, Shop, Product, Cart, Checkout, MyOrders, Contact, Account } from './pages';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
+import { MobileDock } from './shop-ui.jsx';
+import { ScrollReveal, ScrollProgress, BackToTop, CartToast, useSmartHeader, useRipple, useCoverParallax } from './interactions.jsx';
 // Admin, counter billing and bookkeeping load only when an administrator opens them.
 const Admin = lazy(() => import('./admin'));
 const AdminLogin = lazy(() => import('./admin').then(module => ({ default: module.AdminLogin })));
@@ -81,9 +83,21 @@ export default function App() {
   const authArea = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/privacy'].includes(loc.pathname);
   const coverArea = ['/', '/welcome'].includes(loc.pathname);
   const showStore = !adminArea && !authArea && !coverArea;
+  // Cart and checkout show their own action bar on phones, so the dock steps aside there.
+  const showDock = showStore && !['/cart', '/checkout'].includes(loc.pathname);
+  // data-fx turns on storefront interaction effects (interactions.css); admin screens are left alone.
+  useLayoutEffect(() => {
+    document.documentElement.toggleAttribute('data-fx', !adminArea);
+    document.documentElement.toggleAttribute('data-dock', showDock);
+  }, [adminArea, showDock]);
+  useSmartHeader(ready && showStore, menu);
+  useCoverParallax(ready && coverArea);
+  useRipple();
   if (!ready) return <p className="center" role="status">{tr("Checking your account\u2026")}</p>;
   return <>
       <AppUpdateBanner />
+      <ScrollReveal />
+      {(showStore || coverArea) && <ScrollProgress />}
       {tr(showStore && <>
       <div className="announcement">{tr("Rooted in Gondal. Growing with you. ")}<span>{tr("Free delivery on orders \u20B9500 and above")}</span></div>
       <a className="skip-link" href="#content">{tr("Skip to content")}</a>
@@ -139,6 +153,9 @@ export default function App() {
       {showStore && count > 0 && !['/cart', '/checkout'].includes(loc.pathname) && <Link to="/cart" className="floating-cart" aria-label={`${tr('Your cart')} (${count})`}>
         <Icon name="bag" size={26} /><span className="floating-cart-count" key={count} aria-hidden="true">{count > 99 ? '99+' : tr(count)}</span>
       </Link>}
+      {showDock && <MobileDock />}
+      {showStore && <BackToTop />}
+      {showStore && <CartToast />}
       {tr(showStore && <footer className="foot"><div className="footer-inner"><div><Link to="/" className="footer-brand"><Brand /></Link><p>{tr("Quality seeds and farm essentials.")}<br />{tr("For every season. For every farmer.")}</p></div><div><h4>{tr("Explore")}</h4><Link to="/about">{tr("About us")}</Link><Link to="/our-story">{tr("Our story")}</Link><Link to="/our-team">{tr("Our team")}</Link><Link to="/blog">{tr("Blog")}</Link><Link to="/welcome">{tr("Welcome to RAS")}</Link><Link to="/shop">{tr("All products")}</Link><Link to="/shop?category=Seeds">{tr("Seeds")}</Link><Link to="/shop?category=Fertilizers">{tr("Fertilizers")}</Link></div><div><h4>{tr("Here to help")}</h4><Link to="/contact">{tr("Contact us")}</Link><Link to="/orders">{tr("Your orders")}</Link><a href={`https://wa.me/${SHOP.whatsapp}`} target="_blank" rel="noreferrer">{tr("WhatsApp us ↗")}</a><a href={SHOP.mapsUrl} target="_blank" rel="noreferrer">{tr("Visit our shop \u2197")}</a></div><div><h4>{tr("Find us")}</h4><ShopDetails /><span className="footer-note">{tr("A little care. A better harvest.")}</span></div></div><div className="footer-bottom">© {tr(new Date().getFullYear())} {tr(SHOP.name)}<span>{tr("Made for the people who grow.")}</span></div></footer>)}
     </>;
 }

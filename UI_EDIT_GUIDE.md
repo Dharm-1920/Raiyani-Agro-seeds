@@ -4,11 +4,21 @@ Use `client/src/language.jsx` and `client/src/gu.json` for English/Gujarati sele
 
 # Where to edit the website UI
 
-Start with **client/src/refined.css**. This contains the premium design and is loaded after the base stylesheet, `style.css`, so its rules override matching base rules.
+The current look is the **"Harvest" theme** in **client/src/theme.css** (loaded last, customer pages only): deep leaf green, white cards with soft shadows, harvest-gold highlights and the Plus Jakarta Sans font (self-hosted in `client/public/assets/fonts/` with its licence). Change its colours in the first block of that file. Underneath it are **client/src/refined.css** and **client/src/polish.css**, the older design layers; they are loaded after the base stylesheet, `style.css`, so their rules override matching base rules. Two newer files are loaded last (see `main.jsx`):
+
+- **client/src/shop-ui.css**: the checkout steps, payment cards, order tracker, UPI payment panel, phone bottom dock and purchase bar, in the same green and parchment style.
+- **client/src/interactions.css** with **client/src/interactions.jsx**: how the shop *feels* to use (see "Interactions" below).
+
+`App.jsx` sets a `data-fx` attribute on `<html>` on customer pages only, so these interactions never affect admin screens. Visitors who choose "reduce motion" on their phone or computer see no animations.
 
 | File | Edit here for |
 | --- | --- |
-| client/src/refined.css | Colours, fonts, spacing, card appearance, hero background, mobile layouts |
+| client/src/refined.css and client/src/polish.css | Colours, fonts, spacing, card appearance, hero background, mobile layouts |
+| client/src/shop-ui.css | Checkout, payment choice, orders, UPI panel, phone dock and purchase bar styling |
+| client/src/interactions.jsx and client/src/interactions.css | Scroll effects, smart header, back-to-top, add-to-cart message, ripples, number counting |
+| client/src/shop-ui.jsx | Phone bottom dock, Cart → Delivery → Payment → Done steps, order progress tracker, payment status labels, copy button |
+| client/src/shop-ui-gu.json | Gujarati text for the parts above |
+| client/src/purchase.jsx | Quantity control, Add to cart / Buy now, and the fly-to-cart animation |
 | client/src/style.css | Base form, layout and shared component styling |
 | client/src/pages.jsx | Homepage, category sections, product cards, shop, cart, checkout, orders, login and contact content |
 | client/src/App.jsx | Header, search form, navigation, footer and page routes |
@@ -18,22 +28,35 @@ Start with **client/src/refined.css**. This contains the premium design and is l
 | client/src/auth.jsx and client/src/auth.css | Customer login/signup choices, password recovery, email verification and account security |
 | client/src/invoice.jsx | Invoice downloads, WhatsApp sharing and delivery status |
 | client/src/config.js | Shop name, phone, address area, map and opening hours |
-| client/public/assets/farm-sunrise.png | Hero photograph |
+| client/public/assets/farm-sunrise.webp | Hero photograph |
 
 ## Change colours
 
-At the beginning of `refined.css`, change these variables:
+At the beginning of `polish.css`, change these variables:
 
 ```css
 :root {
-  --g: #214b32;   /* main green */
-  --gd: #153722;  /* darker green */
-  --bg: #f9f8f2;  /* page background */
-  --t: #24392a;   /* text */
+  --g: #234b36;   /* main green */
+  --gd: #173b29;  /* darker green */
+  --bg: #f7f5ed;  /* page background */
+  --t: #253c2d;   /* text */
 }
 ```
 
 Some sections use their own colours, such as `.nav`, `.hero .btn`, and `.foot`. Change those selectors too if you want an entirely different palette.
+
+## Interactions
+
+- **Scrolling:** sections, product cards and story cards glide in as they come into view (`ScrollReveal`; the list of what animates is `REVEAL` in `interactions.jsx`). A thin progress line at the top shows how far down the page you are. The header tucks away while scrolling down and slides back when scrolling up. A back-to-top button appears on long pages. The cover photo drifts slightly slower than the page.
+- **Selecting:** the shop's category chips have a highlight that slides to the chosen one. Choosing a payment method pops a check mark onto that card. The quantity number rolls up or down when + or − is pressed. Buttons show a ripple from the exact point you press.
+- **Adding to cart:** the product's picture flies into the cart (the bottom dock on phones, the floating cart button on larger screens), the cart badge bumps, phones give a short vibration, and an "Added to cart · View cart" message slides up so new customers know the next step. Cart totals count smoothly to their new value, and unlocking free delivery gives a small celebration.
+
+## Checkout and payment flow
+
+- **Cart and checkout** show a 4-step progress bar (Cart → Delivery → Payment → Done). On phones, a bar pinned to the bottom always shows the total and the main button. If there is no delivery address yet, that button changes to "Add delivery address" and scrolls to the address section.
+- **Payment choice** cards explain what happens next. UPI is greyed out with the reason when `SHOP_UPI_ID` is not set on the server.
+- **UPI payment panel** (`payment.jsx`): 1) pay with the "Pay with UPI app" button or scan the QR (on phones the button comes first), with a copy button for the UPI ID; 2) enter the 12-digit UTR (pasted spaces and words are removed automatically, with a "Where do I find the UTR?" help); 3) the shop confirms after checking its bank account.
+- **My orders** shows each order's progress (Placed → Confirmed → Shipped → Delivered), a plain payment status, and a "Pay now" button for unpaid UPI orders.
 
 ## Change the homepage heading
 
@@ -41,7 +64,7 @@ In `pages.jsx`, find `export function Home()` and edit the `<h1>` inside the sec
 
 ## Change the hero photo
 
-Replace `client/public/assets/farm-sunrise.png`, or place a new photo in the assets folder and update the URL inside `.hero` in `refined.css`. There is also a mobile `.hero` background rule inside the media query.
+The homepage and cover photo is `client/public/assets/farm-sunrise.webp` (used in `pages.jsx` and `business.jsx`). Files under `/assets` are cached by browsers for a year, so give a new photo a **new file name** and update those two references, instead of overwriting the old file.
 
 ## Add actual product photos
 

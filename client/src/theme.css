@@ -1,0 +1,125 @@
+/* "Harvest" theme: a modern take on the shop's own identity. Deep leaf green, clean white cards,
+   harvest-gold highlights and the Plus Jakarta Sans typeface. Loaded last (main.jsx) and scoped to
+   html[data-fx], which App.jsx sets on customer pages only, so admin screens are unchanged.
+   Change the colours in the first block. */
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:200 800;font-display:swap;src:url('/assets/fonts/plus-jakarta-sans-latin-wght-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:200 800;font-display:swap;src:url('/assets/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+html[data-fx]{
+  --g:#1e4d33;            /* main green */
+  --gd:#143724;           /* darker green (hover) */
+  --bg:#f6f6f1;           /* page background */
+  --t:#1c2a21;            /* text */
+  --m:#677264;            /* secondary text */
+  --line:#e5e7de;         /* borders */
+  --gold:#e3a336;         /* harvest gold accent */
+  --gold-soft:#f8e7c2;
+  --card:#ffffff;
+  --shadow:0 1px 2px #14281c0a,0 10px 30px -14px #14281c26;
+  --shadow-hover:0 2px 4px #14281c0d,0 22px 44px -18px #14281c40;
+  --font:'Plus Jakarta Sans','Noto Sans Gujarati','Nirmala UI','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  font-family:var(--font);color:var(--t);background:var(--bg);
+}
+html[data-fx] body{background:var(--bg);font-family:var(--font);-webkit-font-smoothing:antialiased}
+html[data-fx] :is(h1,h2,h3,h4,h5,h6,button,input,select,textarea){font-family:var(--font)}
+html[data-fx] :is(h1,h2){font-weight:800;letter-spacing:-.035em}
+html[data-fx] h3{font-weight:700;letter-spacing:-.015em}
+html[data-fx] .eyebrow{color:#9a7424;font-weight:800;letter-spacing:.16em}
+html[data-fx] .dot{background:var(--gold)}
+
+/* Buttons and fields */
+html[data-fx] :is(button,.btn){font-weight:700;letter-spacing:0}
+html[data-fx] :is(input,select,textarea){border-radius:12px;border-color:#dcdfd3;background:#fff}
+html[data-fx] :is(input,select,textarea):focus{border-color:#7fa070;box-shadow:0 0 0 4px #1e4d3314;outline:none}
+
+/* Header and announcement */
+html[data-fx] .announcement{background:var(--g);color:#eef3e6;font-weight:600;letter-spacing:.02em}
+html[data-fx] .announcement span{color:var(--gold-soft)}
+html[data-fx] header.nav{background:#fffffff2;border-bottom-color:var(--line)}
+html[data-fx] header.nav.is-scrolled{background:#ffffffeb}
+html[data-fx] .nav .header-search{background:#f3f4ee;border-color:#e3e6dc}
+html[data-fx] .nav>nav>a:not(.cart-link){font-weight:600;color:#3f4d42}
+@media(min-width:761px){
+  html[data-fx] .nav>nav{background:#f5f6f0;border-color:#e6e8df}
+  html[data-fx] .nav>nav>a.active:not(.cart-link),html[data-fx] .nav>nav>a:hover:not(.cart-link){background:#fff;color:var(--g);box-shadow:0 1px 3px #14281c14}
+}
+
+/* Hero */
+html[data-fx] .hero h1{font-weight:800;letter-spacing:-.045em;line-height:1;color:var(--t);font-size:clamp(52px,5.6vw,82px)}
+html[data-fx] .hero h1 em{font-family:inherit;font-style:normal;font-weight:800;color:var(--g);background:linear-gradient(transparent 64%,var(--gold-soft) 64% 92%,transparent 92%)}
+html[data-fx] .hero p{color:var(--m);font-size:15px}
+html[data-fx] .hero .btn{background:var(--g);padding:16px 26px;font-size:14px;box-shadow:0 12px 26px -12px #1e4d3399}
+html[data-fx] .hero .btn:hover{background:var(--gd)}
+html[data-fx] .hero .harvest-note{border-radius:16px;box-shadow:var(--shadow)}
+html[data-fx] .hero .harvest-note b,html[data-fx] .footer-note{font-family:var(--font);font-style:normal;font-weight:700}
+html[data-fx] .hero-seal{background:var(--gold-soft);color:#7a5a17}
+html[data-fx] .hero-trust>span{font-size:11px;font-weight:600}
+
+/* Cards and sections */
+html[data-fx] .benefits{border:0;gap:16px}
+html[data-fx] .benefits>div,html[data-fx] .benefits>div+div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);justify-content:flex-start}
+html[data-fx] .benefits svg{color:var(--g);background:#eef3e8;border-radius:12px;padding:9px;width:42px;height:42px}
+html[data-fx] .benefits b{font-weight:700;font-size:13px}
+html[data-fx] .section-head h2{font-size:clamp(30px,3.2vw,42px);line-height:1.12}
+html[data-fx] :is(.category,.card,.visit,.wix-about-row,.business-values article,.business-values.wix-photo-values article,.wix-team-gallery article,.wix-blog-card,.wix-product-gallery a,.contact-info,.cart-items,.cart-summary,.fx-checkout-step,.fx-summary,.order.fx-order,.payment-qr.fx-upi,.account-panel,.account-sidebar,.box:not(.fx-orders)){background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+html[data-fx] :is(.card,.category):hover{box-shadow:var(--shadow-hover);transform:translateY(-4px)}
+html[data-fx] .category h3{font-size:21px}
+html[data-fx] .category-arrow{border-color:#cfd8c5;color:var(--g)}
+html[data-fx] .category:hover .category-arrow{background:var(--g);color:#fff;border-color:var(--g)}
+html[data-fx] .card .product-image,html[data-fx] .card .product-image>img{border-radius:16px;background:#f3f5ee}
+html[data-fx] .card h3{font-weight:700;font-size:15px}
+html[data-fx] .card p:not(.muted){font-weight:800;letter-spacing:-.02em}
+html[data-fx] .discount{background:var(--gold-soft);border:0;color:#7a5a17;font-weight:800}
+html[data-fx] .card .add-button,html[data-fx] .purchase-buttons button{font-weight:700}
+html[data-fx] .page-heading{background:radial-gradient(70% 140% at 100% 0%,#f8e7c2aa,transparent 60%),#eef2e7;border:0;border-radius:26px}
+html[data-fx] .page-heading::before,html[data-fx] .page-heading::after{border-color:#1e4d331f}
+html[data-fx] .page-heading h1{font-size:clamp(34px,4.2vw,52px)}
+html[data-fx] .about-banner{background:radial-gradient(60% 120% at 100% 100%,#2f6a46,transparent 70%),var(--g);border-radius:28px}
+html[data-fx] .about-banner h2{font-size:clamp(32px,3.6vw,46px)}
+html[data-fx] .btn.light{background:var(--gold);color:#1c2a21}
+html[data-fx] .btn.light:hover{background:#f0b54d}
+html[data-fx] .shop-chips button{font-weight:600}
+html[data-fx] .bar{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
+html[data-fx] .wix-intro-top>img{border-radius:28px}
+html[data-fx] .wix-farm-strip{border-radius:22px}
+
+/* Product page, cart, checkout and orders */
+html[data-fx] .detail>img,html[data-fx] .detail>.ph{border-radius:28px;border:0;background:#eef2e7;box-shadow:var(--shadow)}
+html[data-fx] .detail .big{font-weight:800;letter-spacing:-.03em}
+html[data-fx] .fx-checkout-step::before{font-family:var(--font);font-weight:800}
+html[data-fx] .fx-num{font-family:var(--font);font-weight:800}
+html[data-fx] .payment-choices label.fx-pay-option{background:#fbfcf8;border-radius:16px}
+html[data-fx] .payment-choices label.fx-pay-option.selected{background:#f0f5ea}
+html[data-fx] .fx-summary-total dd,html[data-fx] .cart-summary-total b,html[data-fx] .fx-upi-details .fx-upi-amount{font-weight:800;letter-spacing:-.03em}
+html[data-fx] .fx-steps{background:var(--card);box-shadow:var(--shadow)}
+
+/* Cover page */
+html[data-fx] .cover-copy h1{font-weight:800;letter-spacing:-.045em;line-height:1.02}
+html[data-fx] .cover-copy h1 em{font-family:inherit;font-style:normal;color:var(--gold-soft)}
+html[data-fx] .cover-actions>.btn{background:var(--gold);border-color:var(--gold);color:#1c2a21}
+html[data-fx] .cover-actions>.btn:hover{background:#f0b54d}
+html[data-fx] .ras-story-card{border-radius:26px}
+html[data-fx] .cover-app-banner{border-radius:28px}
+html[data-fx] .app-phone-screen b{font-family:var(--font);font-weight:800}
+
+/* Footer */
+html[data-fx] .foot{background:#14321f}
+html[data-fx] .foot h4{color:var(--gold-soft)}
+
+/* Sign-in */
+html[data-fx] .auth-card h1{font-weight:800;letter-spacing:-.04em}
+
+/* The logo wordmark keeps its brand serif */
+html[data-fx] .ras-wordmark>strong{font-family:Georgia,'Times New Roman',serif}
+
+/* Gujarati: no negative tracking, roomier lines */
+html[data-fx][lang="gu"] :is(h1,h2,h3,.hero h1,.cover-copy h1){letter-spacing:0;line-height:1.35}
+html[data-fx][lang="gu"] .eyebrow{letter-spacing:0}
+html[data-fx][lang="gu"] .ras-wordmark>strong{font-family:'Noto Sans Gujarati',sans-serif}
+
+@media(max-width:760px){
+  html[data-fx] .hero h1{font-size:clamp(44px,12vw,58px)}
+  html[data-fx] .benefits>div,html[data-fx] .benefits>div+div{padding:12px;flex-direction:column;text-align:center}
+  html[data-fx] .benefits svg{width:38px;height:38px}
+  html[data-fx] :is(.category,.card){border-radius:18px}
+}

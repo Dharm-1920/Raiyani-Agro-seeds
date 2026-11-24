@@ -68,6 +68,21 @@ router.put('/:id', protect, adminOnly, upload.array('images', 5), async (req, re
   res.json(p);
   } catch (error) { if (images && process.env.UPLOAD_STORAGE === 'mongodb') await removeImages(images).catch(() => {}); res.status(error.status || 400).json({ message: error.message }); }
 });
+// Quick stock change from the admin catalogue. $inc keeps it correct even while orders deduct stock at the same time.
+router.patch('/:id/stock', protect, adminOnly, async (req, res) => {
+  try {
+    const delta = Number(req.body?.delta);
+    if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 10000) return res.status(400).json({ message: 'Enter a whole-number stock change.' });
+    if (!require('mongoose').isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid product ID' });
+    const product = await Product.findOneAndUpdate({ _id: req.params.id, isDeleted: { $ne: true }, ...(delta < 0 ? { stock: { $gte: -delta } } : {}) }, { $inc: { stock: delta } }, { new: true });
+    if (!product) {
+      const exists = await Product.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
+      return res.status(exists ? 409 : 404).json({ message: exists ? 'Stock cannot go below zero.' : 'Product not found' });
+    }
+    if (delta > 0 && product.isActive) await require('../services/notifications').safely(() => require('../services/notifications').notifyRestockedProduct(product._id));
+    res.json(product);
+  } catch { res.status(500).json({ message: 'Could not update stock. Please try again.' }); }
+});
 // Archive removed products so existing orders retain their product references.
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {

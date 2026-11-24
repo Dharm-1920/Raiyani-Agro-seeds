@@ -44,7 +44,9 @@ function AddressEditor({ address, user, isDefault, first, onSave, onCancel }) {
   }, []);
   const field = (key, title, autoComplete, required = true, limit = 200) => <label>{tr(title)}{!required && <small>{tr('Optional')}</small>}<input required={required} maxLength={limit} type={key === 'phone' ? 'tel' : 'text'} inputMode={key === 'postalCode' ? 'numeric' : undefined} pattern={key === 'postalCode' ? '[1-9][0-9]{5}' : undefined} autoComplete={autoComplete} value={form[key]} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} /></label>;
   const submit = async event => {
-    event.preventDefault(); setBusy(true); setError('');
+    // This dialog is a portal; without stopPropagation React would also deliver this submit to an
+    // enclosing form, such as checkout's "Place order" form.
+    event.preventDefault(); event.stopPropagation(); setBusy(true); setError('');
     try { await onSave(form, makeDefault); }
     catch (error) { setError(errMsg(error)); setBusy(false); }
   };

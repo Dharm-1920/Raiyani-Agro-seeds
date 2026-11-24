@@ -29,8 +29,23 @@ router.put('/orders/:id/cancel', async (req, res) => {
   try { res.json({ order: await cancelOrder(req.params.id, req.user) }); }
   catch(e) { res.status(e.status || 500).json({ message: e.status ? e.message : 'Cancellation could not finish. Please retry.' }); }
 });
+// Work queues shown on the dashboard and used as order filters (?needs=...).
+const NEEDS = {
+  payment: { paymentMethod: 'upi', paymentStatus: { $in: ['pending', 'failed'] }, paymentReference: { $exists: true }, orderStatus: { $in: ['placed', 'confirmed'] } },
+  pack: { orderStatus: { $in: ['placed', 'confirmed'] }, $or: [{ paymentMethod: 'cod' }, { paymentStatus: 'paid' }] },
+  refund: { orderStatus: 'cancelled', paymentStatus: 'paid' },
+};
+// Midnight in India, so "today" matches the shop's day wherever the server runs.
+const startOfShopDay = (now = Date.now()) => { const offset = 330 * 60000; return new Date(Math.floor((now + offset) / 86400000) * 86400000 - offset); };
 router.get('/stats', async (req, res) => {
   const paid = { $or: [{ paymentStatus: 'paid' }, { paymentMethod: 'cod', orderStatus: 'delivered' }] };
+  const today = { createdAt: { $gte: startOfShopDay() }, orderStatus: { $ne: 'cancelled' } };
+  const [todayTotals, toVerify, toPack, refunds, unreadMessages] = await Promise.all([
+    Order.aggregate([{ $match: today }, { $group: { _id: null, n: { $sum: 1 }, t: { $sum: '$totalAmount' } } }]),
+    Order.countDocuments(NEEDS.payment), Order.countDocuments(NEEDS.pack), Order.countDocuments(NEEDS.refund),
+    Message.countDocuments({ isRead: { $ne: true } }),
+  ]);
+  const attention = { todayOrders: todayTotals[0]?.n || 0, todaySales: todayTotals[0]?.t || 0, toVerify, toPack, refunds, unreadMessages };
   const [orders, users, products, revenue, byStatus, lowStock, top] = await Promise.all([
     Order.countDocuments(), User.countDocuments({ role: 'user' }), Product.countDocuments({ isActive: true }),
     Order.aggregate([{ $match: { ...paid, orderStatus: { $ne: 'cancelled' } } }, { $group: { _id: null, t: { $sum: '$totalAmount' } } }]),
@@ -39,10 +54,10 @@ router.get('/stats', async (req, res) => {
     Order.aggregate([{ $match: { orderStatus: { $ne: 'cancelled' } } }, { $unwind: '$items' },
       { $group: { _id: '$items.name', qty: { $sum: '$items.qty' } } }, { $sort: { qty: -1 } }, { $limit: 5 }]),
   ]);
-  res.json({ orders, users, products, revenue: revenue[0]?.t || 0, byStatus, lowStock, top });
+  res.json({ orders, users, products, revenue: revenue[0]?.t || 0, byStatus, lowStock, top, attention });
 });
 router.get('/orders', async (req, res) => {
-  const q = req.query.status ? { orderStatus: req.query.status } : {};
+  const q = Object.hasOwn(NEEDS, String(req.query.needs)) ? NEEDS[req.query.needs] : (req.query.status ? { orderStatus: String(req.query.status) } : {});
   res.json(await Order.find(q).populate('user', 'name email').sort({ createdAt: -1 }).limit(200));
 });
 router.put('/orders/:id/status', async (req, res) => {

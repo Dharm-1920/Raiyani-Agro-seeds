@@ -95,7 +95,36 @@ const expenseSchema = new Schema({
   amountCents: { type: Number, required: true, min: 1 },
   method: { type: String, enum: ['cash', 'upi'], required: true }, occurredAt: { type: Date, required: true },
 }, { timestamps: true });
+// Cancelled entries stay in the books as an audit trail and are left out of every total.
+const voidFields = { voidedAt: Date, voidReason: String, voidedBy: { type: Schema.Types.ObjectId, ref: 'User' } };
+expenseSchema.add(voidFields);
 const Expense = mongoose.model('Expense', expenseSchema);
+// Stock bought from a supplier. Amounts are paise (integers) like the other books.
+const Purchase = mongoose.model('Purchase', new Schema({
+  requestKey: { type: String, required: true, unique: true }, requestHash: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  supplier: { name: { type: String, required: true }, phone: String, gstin: String },
+  supplierKey: { type: String, required: true, index: true },
+  billNumber: String, occurredAt: { type: Date, required: true, index: true },
+  items: [{ product: { type: Schema.Types.ObjectId, ref: 'Product' }, name: String, unit: String, qty: Number, rateCents: Number, gstPercent: Number, amountCents: Number, taxCents: Number }],
+  subtotalCents: Number, taxCents: Number, otherChargesCents: Number, totalCents: { type: Number, required: true, min: 1 },
+  paidCents: { type: Number, default: 0, min: 0 }, paymentMethod: { type: String, enum: ['cash', 'upi', 'credit'], required: true },
+  addToStock: { type: Boolean, default: false }, stockApplied: { type: Boolean, default: false }, stockReversed: { type: Boolean, default: false },
+  note: String, ...voidFields,
+}, { timestamps: true }));
+const SupplierPayment = mongoose.model('SupplierPayment', new Schema({
+  requestKey: { type: String, required: true, unique: true }, requestHash: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  supplier: { name: { type: String, required: true }, phone: String }, supplierKey: { type: String, required: true, index: true },
+  amountCents: { type: Number, required: true, min: 1 }, method: { type: String, enum: ['cash', 'upi'], required: true },
+  occurredAt: { type: Date, required: true, index: true }, note: String, ...voidFields,
+}, { timestamps: true }));
+// End-of-day cash count. One per India calendar day; closing again updates it.
+const DayClose = mongoose.model('DayClose', new Schema({
+  date: { type: String, required: true, unique: true }, countedCashCents: { type: Number, required: true, min: 0 },
+  expectedCashCents: { type: Number, required: true }, note: String,
+  closedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }, closedByName: String,
+}, { timestamps: true }));
 const JournalEntry = mongoose.model('JournalEntry', new Schema({
   requestKey: { type: String, required: true, unique: true }, requestHash: { type: String, required: true },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -191,4 +220,4 @@ const restockDeliverySchema = new Schema({
 restockDeliverySchema.index({ status: 1, nextAttemptAt: 1 });
 const RestockDelivery = mongoose.model('RestockDelivery', restockDeliverySchema);
 [InvoiceDelivery, PaymentReminder, RestockDelivery].forEach(model => model.schema.add({ deliveryStatus: String, deliveryTimestamp: Number, deliveryRank: Number }));
-module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, JournalEntry, PaymentReminder, Message, Notification, DeviceToken, StockSubscription, ProductImage, AuthToken, InvoiceDelivery, WhatsAppPreference, RestockDelivery };
+module.exports = { User, Product, Order, CounterBill, CounterCustomer, Expense, Purchase, SupplierPayment, DayClose, JournalEntry, PaymentReminder, Message, Notification, DeviceToken, StockSubscription, ProductImage, AuthToken, InvoiceDelivery, WhatsAppPreference, RestockDelivery };

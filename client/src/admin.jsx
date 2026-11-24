@@ -14,10 +14,12 @@ import InvoiceButton from './invoice.jsx';
 import PaymentStatus from './payment-status.jsx';
 import CounterBills from './counter-bills.jsx';
 import Bookkeeping from './bookkeeping.jsx';
+import DailyRegister from './daily-register.jsx';
 import AccountBook from './account-book.jsx';
 import CounterCustomers from './counter-customers.jsx';
 import { refundText } from './payment.jsx';
 import './admin.css';
+import './admin-tools.css';
 import { NotificationBell, useNotifications } from './notifications.jsx';
 const STATUSES = ['placed', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 const empty = {
@@ -59,10 +61,25 @@ function useData(url, initial) {
   }, [load]);
   return {
     data,
+    setData,
     loading,
     error,
     load
   };
+}
+// Indian mobile numbers are saved without the country code, but WhatsApp links need it.
+const whatsappLink = phone => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits ? 'https://wa.me/' + (digits.length === 10 ? '91' + digits : digits) : '';
+};
+function Attention({
+  a,
+  open
+}) {
+  if (!a) return null;
+  const items = [['toVerify', 'UPI payments to check', 'Customer sent a UPI reference. Match it in your bank.', 'qr', () => open('Orders', { needs: 'payment' })], ['toPack', 'Orders to pack', 'Confirmed or cash-on-delivery orders waiting to ship.', 'box', () => open('Orders', { needs: 'pack' })], ['refunds', 'Refunds to send', 'Paid orders that were cancelled.', 'cash', () => open('Orders', { needs: 'refund' })], ['unreadMessages', 'Unread messages', 'New questions from the contact form.', 'mail', () => open('Messages')]];
+  const waiting = items.filter(([key]) => a[key] > 0);
+  return <section className="admin-today" aria-label={tr("Today")}><div className="admin-today-summary"><span className="eyebrow">{tr("TODAY")}</span><b>{a.todayOrders}</b><span>{tr(a.todayOrders === 1 ? 'order' : 'orders')} · {rs(a.todaySales)}</span></div><div className="admin-attention">{waiting.length ? waiting.map(([key, title, hint, icon, go]) => <button type="button" key={key} onClick={go}><Icon name={icon} size={20} /><span><b>{a[key]}</b> {tr(title)}<small>{tr(hint)}</small></span><Icon name="arrow" size={16} /></button>) : <p className="admin-all-clear"><Icon name="check" size={20} />{tr("All caught up. Nothing is waiting for you.")}</p>}</div></section>;
 }
 function State({
   resource,
@@ -120,7 +137,7 @@ function Dashboard({
 }) {
   const resource = useData('/admin/stats', null),
     s = resource.data;
-  return <State resource={resource}>{tr(s && <><PaymentStatus/><div className="admin-kpis">{tr([['Revenue', rs(s.revenue), 'Delivered COD & paid orders', 'sun'], ['Orders', s.orders, 'All customer orders', 'bag'], ['Customers', s.users, 'Registered shoppers', 'user'], ['Products', s.products, 'Active products in your shop', 'leaf']].map(([title, value, description, icon]) => <div key={title}><span><small>{tr(title)}</small><Icon name={icon} /></span><b>{tr(value)}</b><p>{tr(description)}</p></div>))}</div><div className="admin-quick"><div><h3>{tr("Make room for your next harvest.")}</h3><p>{tr("Keep your catalogue and stock up to date.")}</p></div><button onClick={() => open('Products')}>{tr("Manage products ")}<Icon name="arrow" size={18} /></button></div><div className="admin-panels"><section><h3>{tr("Order overview")}</h3>{tr(s.byStatus.length ? STATUSES.map(status => {
+  return <State resource={resource}>{tr(s && <><PaymentStatus/><Attention a={s.attention} open={open} /><div className="admin-kpis">{tr([['Revenue', rs(s.revenue), 'Delivered COD & paid orders', 'sun'], ['Orders', s.orders, 'All customer orders', 'bag'], ['Customers', s.users, 'Registered shoppers', 'user'], ['Products', s.products, 'Active products in your shop', 'leaf']].map(([title, value, description, icon]) => <div key={title}><span><small>{tr(title)}</small><Icon name={icon} /></span><b>{tr(value)}</b><p>{tr(description)}</p></div>))}</div><div className="admin-quick"><div><h3>{tr("Make room for your next harvest.")}</h3><p>{tr("Keep your catalogue and stock up to date.")}</p></div><button onClick={() => open('Products')}>{tr("Manage products ")}<Icon name="arrow" size={18} /></button></div><div className="admin-panels"><section><h3>{tr("Order overview")}</h3>{tr(s.byStatus.length ? STATUSES.map(status => {
             const count = s.byStatus.find(x => x._id === status)?.n || 0;
             return <div className="status-meter" key={status}><span>{tr(status)}<b>{tr(count)}</b></span><div><i style={{
                   width: `${s.orders ? count / s.orders * 100 : 0}%`
@@ -137,8 +154,32 @@ function Products() {
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [busy, setBusy] = useState(false),
-    [search, setSearch] = useState('');
+    [search, setSearch] = useState(''),
+    [show, setShow] = useState('all'),
+    [stockBusy, setStockBusy] = useState('');
   const formRef = useRef(null);
+  // Changes stock by a relative amount on the server, so orders placed meanwhile are never overwritten.
+  const adjust = async (p, delta) => {
+    if (!delta) return;
+    setError('');
+    setNotice('');
+    setStockBusy(p._id);
+    try {
+      const { data } = await api.patch(`/products/${p._id}/stock`, { delta });
+      resource.setData(current => ({ ...current, items: current.items.map(x => x._id === p._id ? { ...x, stock: data.stock } : x) }));
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setStockBusy('');
+    }
+  };
+  const addStock = p => {
+    const answer = prompt(tr('How many units to add? Use a minus sign to remove, e.g. -3.'), '');
+    if (answer === null) return;
+    const delta = Number(answer.trim());
+    if (!Number.isInteger(delta) || !delta) return setError('Enter a whole number, for example 10 or -3.');
+    adjust(p, delta);
+  };
   const translate = async () => {
     setError('');
     setNotice('');
@@ -225,18 +266,42 @@ function Products() {
   const categoryOptions = [...new Set(['Seeds', 'Fertilizers', 'Pesticides', 'Tools', ...(resource.data.categories || []), ...resource.data.items.map(p => p.category)].filter(Boolean))];
   const changeCategory = value => setForm(current => ({ ...current, category: value, categoryGu: '' }));
   const categoryField = <CategoryPicker key={editId || 'new'} value={form.category} options={categoryOptions} onChange={changeCategory} disabled={busy} />;
-  const list = resource.data.items.filter(p => `${p.name} ${p.nameGu || ""} ${p.category} ${p.categoryGu || ""}`.toLowerCase().includes(search.toLowerCase()));
+  const views = {
+    all: () => true,
+    low: p => p.stock > 0 && p.stock <= 5,
+    out: p => p.stock <= 0,
+    hidden: p => !p.isActive
+  };
+  const list = resource.data.items.filter(views[show]).filter(p => `${p.name} ${p.nameGu || ""} ${p.category} ${p.categoryGu || ""}`.toLowerCase().includes(search.toLowerCase()));
+  const viewChips = [['all', 'All products'], ['low', 'Low stock'], ['out', 'Out of stock'], ['hidden', 'Hidden']].map(([key, label]) => [key, label, resource.data.items.filter(views[key]).length]);
   return <><form ref={formRef} className="admin-panel product-editor" onSubmit={save}><div className="admin-section-title"><h3>{tr(editId ? 'Edit product' : 'Add a product')}</h3><span className="mini-badge">{tr("Inventory")}</span></div><fieldset disabled={busy}><ProductFields form={form} setForm={setForm} categoryField={categoryField} /><label>{tr("Description")}<textarea rows="3" value={form.description} onChange={e => setForm({
             ...form,
             description: e.target.value, descriptionGu: ""
-          })} /></label><details className="product-translations"><summary>{tr("Review Gujarati (optional)")}</summary><p>{tr("Gujarati is generated automatically on save. Only fill these fields if you want to override the translation.")}</p><div className="formgrid">{input('nameGu','Gujarati product name','text',false)}{input('categoryGu','Gujarati category','text',false)}{input('unitGu','Gujarati unit / pack size','text',false)}</div><label>{tr("Gujarati description")}<textarea lang="gu" rows="3" value={form.descriptionGu} onChange={e=>setForm({...form,descriptionGu:e.target.value})}/></label><button type="button" className="secondary" disabled={busy || !form.name.trim()} onClick={translate}>{tr(busy?'Please wait…':'Generate Gujarati')}</button></details><label className="upload-area"><Icon name="bag" />{tr(" Product photos ")}<small>{tr("Up to 5 photos \xB7 JPG, PNG, WebP \xB7 2MB each")}</small><input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={e => setFiles(Array.from(e.target.files))} /></label>{tr(editId && <p className="muted">{tr("Upload new photos to replace existing photos, or leave this blank to keep them.")}</p>)}<div className="editor-actions"><button>{tr(busy ? 'Saving…' : editId ? 'Save changes' : 'Add product')}</button>{tr(editId && <button type="button" className="secondary" onClick={reset}>{tr("Cancel edit")}</button>)}</div></fieldset></form>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}{tr(notice && <p className="ok" role="status">{tr(notice)}</p>)}<section className="admin-panel"><div className="admin-section-title"><h3>{tr("Product catalogue ")}<span className="mini-badge">{tr(resource.data.items.length)}</span></h3><input aria-label={tr("Search inventory")} placeholder={tr("Search inventory…")} value={search} onChange={e => setSearch(e.target.value)} /></div><State resource={resource}>{tr(list.length ? <AdminTable label="Product catalogue" mobileCards numericColumns={[1,2]} minWidth={720}><thead><tr><th>{tr("Product")}</th><th>{tr("Price")}</th><th>{tr("Stock")}</th><th>{tr("Visibility")}</th><th>{tr("Actions")}</th></tr></thead><tbody>{tr(list.map(p => <tr key={p._id}><td><b>{productText(p)}</b><small>{productText(p, "category")} · {productText(p, "unit")}</small></td><td>{tr(rs(p.price))}</td><td><span className={p.stock <= 5 ? 'low-stock' : ''}>{tr(p.stock)}</span></td><td><span className={'tag ' + (p.isActive ? 'delivered' : 'cancelled')}>{tr(p.isActive ? 'Live' : 'Hidden')}</span></td><td><button className="link" disabled={busy} onClick={() => edit(p)}>{tr("Edit")}</button><button className="link" disabled={busy} onClick={() => toggle(p)}>{tr(p.isActive ? 'Hide' : 'Show')}</button><button className="link danger" disabled={busy} onClick={() => remove(p)}>{tr("Remove")}</button></td></tr>))}</tbody></AdminTable> : <Empty>{tr("No products match your search. Add your first product above.")}</Empty>)}</State><p className="muted">{tr("Showing up to 100 products. Hide keeps a product in your inventory for later. Remove takes it out of the catalogue and shop while preserving existing orders.")}</p></section></>;
+          })} /></label><details className="product-translations"><summary>{tr("Review Gujarati (optional)")}</summary><p>{tr("Gujarati is generated automatically on save. Only fill these fields if you want to override the translation.")}</p><div className="formgrid">{input('nameGu','Gujarati product name','text',false)}{input('categoryGu','Gujarati category','text',false)}{input('unitGu','Gujarati unit / pack size','text',false)}</div><label>{tr("Gujarati description")}<textarea lang="gu" rows="3" value={form.descriptionGu} onChange={e=>setForm({...form,descriptionGu:e.target.value})}/></label><button type="button" className="secondary" disabled={busy || !form.name.trim()} onClick={translate}>{tr(busy?'Please wait…':'Generate Gujarati')}</button></details><label className="upload-area"><Icon name="bag" />{tr(" Product photos ")}<small>{tr("Up to 5 photos \xB7 JPG, PNG, WebP \xB7 2MB each")}</small><input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={e => setFiles(Array.from(e.target.files))} /></label>{tr(editId && <p className="muted">{tr("Upload new photos to replace existing photos, or leave this blank to keep them.")}</p>)}<div className="editor-actions"><button>{tr(busy ? 'Saving…' : editId ? 'Save changes' : 'Add product')}</button>{tr(editId && <button type="button" className="secondary" onClick={reset}>{tr("Cancel edit")}</button>)}</div></fieldset></form>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}{tr(notice && <p className="ok" role="status">{tr(notice)}</p>)}<section className="admin-panel"><div className="admin-section-title"><h3>{tr("Product catalogue ")}<span className="mini-badge">{tr(resource.data.items.length)}</span></h3><input aria-label={tr("Search inventory")} placeholder={tr("Search inventory…")} value={search} onChange={e => setSearch(e.target.value)} /></div><div className="admin-chips" role="group" aria-label={tr("Filter products")}>{viewChips.map(([key, label, n]) => <button type="button" key={key} aria-pressed={show === key} className={key !== 'all' && key !== 'hidden' && n > 0 ? 'needs-work' : ''} onClick={() => setShow(key)}>{tr(label)}<span>{n}</span></button>)}</div><State resource={resource}>{tr(list.length ? <AdminTable label="Product catalogue" mobileCards numericColumns={[1,2]} minWidth={720}><thead><tr><th>{tr("Product")}</th><th>{tr("Price")}</th><th>{tr("Stock")}</th><th>{tr("Visibility")}</th><th>{tr("Actions")}</th></tr></thead><tbody>{tr(list.map(p => <tr key={p._id}><td><b>{productText(p)}</b><small>{productText(p, "category")} · {productText(p, "unit")}</small></td><td>{tr(rs(p.price))}</td><td><span className="stock-stepper"><button type="button" aria-label={tr("Remove one from stock")} disabled={busy || stockBusy === p._id || p.stock <= 0} onClick={() => adjust(p, -1)}>−</button><b className={p.stock <= 5 ? 'low-stock' : ''} aria-live="polite">{p.stock}</b><button type="button" aria-label={tr("Add one to stock")} disabled={busy || stockBusy === p._id} onClick={() => adjust(p, 1)}>+</button></span><button type="button" className="link stock-add" disabled={busy || stockBusy === p._id} onClick={() => addStock(p)}>{tr("Add stock…")}</button></td><td><span className={'tag ' + (p.isActive ? 'delivered' : 'cancelled')}>{tr(p.isActive ? 'Live' : 'Hidden')}</span></td><td><button className="link" disabled={busy} onClick={() => edit(p)}>{tr("Edit")}</button><button className="link" disabled={busy} onClick={() => toggle(p)}>{tr(p.isActive ? 'Hide' : 'Show')}</button><button className="link danger" disabled={busy} onClick={() => remove(p)}>{tr("Remove")}</button></td></tr>))}</tbody></AdminTable> : <Empty>{show === 'all' ? 'No products match your search. Add your first product above.' : 'No products in this list.'}</Empty>)}</State><p className="muted">{tr("Showing up to 100 products. Hide keeps a product in your inventory for later. Remove takes it out of the catalogue and shop while preserving existing orders.")}</p></section></>;
 }
+const ORDER_NEEDS = ['payment', 'pack', 'refund'];
 function Orders() {
   const notifications = useNotifications();
-  const [status, setStatus] = useState(''),
+  const location = useLocation(),
+    nav = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const [filter, setFilter] = useState(ORDER_NEEDS.includes(params.get('needs')) ? 'needs:' + params.get('needs') : STATUSES.includes(params.get('status')) ? params.get('status') : ''),
+    [search, setSearch] = useState(''),
     [error, setError] = useState(''),
     [busy, setBusy] = useState('');
-  const resource = useData('/admin/orders?status=' + encodeURIComponent(status), []);
+  const resource = useData(filter.startsWith('needs:') ? '/admin/orders?needs=' + filter.slice(6) : '/admin/orders?status=' + encodeURIComponent(filter), []);
+  const stats = useData('/admin/stats', null);
+  const choose = value => {
+    setFilter(value);
+    const next = new URLSearchParams({ tab: 'Orders' });
+    if (value.startsWith('needs:')) next.set('needs', value.slice(6)); else if (value) next.set('status', value);
+    nav('/admin?' + next, { replace: true });
+  };
+  const a = stats.data?.attention || {},
+    count = status => stats.data?.byStatus?.find(x => x._id === status)?.n;
+  const chips = [['', 'All orders', stats.data?.orders], ['needs:payment', 'UPI to check', a.toVerify], ['needs:pack', 'To pack', a.toPack], ...STATUSES.map(s => [s, s, count(s)]), ['needs:refund', 'Refunds due', a.refunds]];
+  const term = search.trim().toLowerCase();
+  const orders = term ? resource.data.filter(o => [o._id.slice(-8), o.shipping?.name, o.shipping?.phone, o.shipping?.address, o.paymentReference, o.user?.email, ...o.items.map(i => i.name)].filter(Boolean).join(' ').toLowerCase().includes(term.replace(/^#/, ''))) : resource.data;
   useEffect(() => {
     if (!resource.loading && !resource.error && resource.data.length) {
       notifications.write('put', '/read-purchases', { orderIds: resource.data.map(order => order._id) }).catch(e => setError(errMsg(e)));
@@ -249,7 +314,7 @@ function Orders() {
       await api.put(`/admin/orders/${id}/status`, {
         orderStatus
       });
-      await resource.load();
+      await Promise.all([resource.load(), stats.load()]);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -265,7 +330,7 @@ function Orders() {
       await api.post(`/admin/orders/${order._id}/payment-confirm`, {
         reference
       });
-      await resource.load();
+      await Promise.all([resource.load(), stats.load()]);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -281,7 +346,7 @@ function Orders() {
       await api.post(`/admin/orders/${order._id}/refund-confirm`, {
         reference
       });
-      await resource.load();
+      await Promise.all([resource.load(), stats.load()]);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -294,16 +359,16 @@ function Orders() {
     setBusy(order._id);
     try {
       await api.put(`/admin/orders/${order._id}/cancel`);
-      await resource.load();
+      await Promise.all([resource.load(), stats.load()]);
     } catch (e) {
       setError(errMsg(e));
     } finally {
       setBusy('');
     }
   };
-  return <section className="admin-panel"><div className="admin-section-title"><h3>{tr("Customer orders")}</h3><select aria-label={tr("Filter orders by status")} value={status} onChange={e => setStatus(e.target.value)}><option value="">{tr("All statuses")}</option>{tr(STATUSES.map(s => <option key={s} value={s}>{tr(s)}</option>))}</select></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<State resource={resource}>{tr(resource.data.length ? <AdminTable label="Customer orders" className="admin-orders-table" mobileCards numericColumns={[3]} minWidth={980}><thead><tr><th>{tr("Order")}</th><th>{tr("Customer")}</th><th>{tr("Items")}</th><th>{tr("Total")}</th><th>{tr("Payment")}</th><th>{tr("Status")}</th><th>{tr("Invoice")}</th></tr></thead><tbody>{tr(resource.data.map(o => <tr key={o._id}><td><b>#{tr(o._id.slice(-8).toUpperCase())}</b><small>{tr(new Date(o.createdAt).toLocaleDateString('en-IN'))}</small></td><td>{o.shipping?.name}<small>{o.shipping?.phone}<br />{o.shipping?.address}</small></td><td>{tr(o.items.map((i, k) => <div key={k}>{i.name} × {tr(i.qty)}</div>))}</td><td>{tr(rs(o.totalAmount))}</td><td><span className={'tag admin-payment-tag is-' + o.paymentStatus}>{tr(o.paymentMethod === 'upi' ? 'UPI QR' : o.paymentMethod === 'cod' ? 'COD' : 'Online')} · {tr(o.paymentStatus)}</span>{tr(refundText(o) && <small>{tr(refundText(o))}</small>)}{tr(o.paymentReference && <small>{tr("Submitted UTR: ")}{o.paymentReference}</small>)}{tr(o.paymentMethod === 'upi' && ['pending', 'failed'].includes(o.paymentStatus) && ['placed', 'confirmed', 'cancelled'].includes(o.orderStatus) && <button className="link" disabled={Boolean(busy)} onClick={() => confirmPayment(o)}>{tr("Confirm bank payment")}</button>)}{tr(o.orderStatus === 'cancelled' && o.paymentStatus === 'paid' && <button className="link" disabled={Boolean(busy)} onClick={() => confirmRefund(o)}>{tr("Record completed refund")}</button>)}{tr(o.transactionId && <><small>{tr("Payment: ")}{o.transactionId}</small></>)}</td><td><select aria-label={'Status for order ' + o._id.slice(-8)} value={o.orderStatus} disabled={busy === o._id || o.orderStatus === 'cancelled' || o.orderStatus === 'delivered'} onChange={e => {
+  return <section className="admin-panel"><div className="admin-section-title"><h3>{tr("Customer orders")}</h3><input type="search" aria-label={tr("Search orders")} placeholder={tr("Search name, phone, order no. or product…")} value={search} onChange={e => setSearch(e.target.value)} /></div><div className="admin-chips" role="group" aria-label={tr("Filter orders by status")}>{chips.map(([value, label, n]) => <button type="button" key={value || 'all'} aria-pressed={filter === value} className={STATUSES.includes(value) ? 'is-status' : value.startsWith('needs:') && n > 0 ? 'needs-work' : ''} onClick={() => choose(value)}>{tr(label)}{n > 0 && <span>{n}</span>}</button>)}</div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<State resource={resource}>{tr(orders.length ? <AdminTable label="Customer orders" className="admin-orders-table" mobileCards numericColumns={[3]} minWidth={980}><thead><tr><th>{tr("Order")}</th><th>{tr("Customer")}</th><th>{tr("Items")}</th><th>{tr("Total")}</th><th>{tr("Payment")}</th><th>{tr("Status")}</th><th>{tr("Invoice")}</th></tr></thead><tbody>{tr(orders.map(o => <tr key={o._id}><td><b>#{tr(o._id.slice(-8).toUpperCase())}</b><small>{tr(new Date(o.createdAt).toLocaleDateString('en-IN'))}</small></td><td>{o.shipping?.name}<small>{o.shipping?.phone}<br />{o.shipping?.address}</small>{o.shipping?.phone && <span className="admin-contact"><a href={'tel:' + o.shipping.phone.replace(/[^\d+]/g, '')}><Icon name="phone" size={14} />{tr("Call")}</a><a href={whatsappLink(o.shipping.phone)} target="_blank" rel="noreferrer">{tr("WhatsApp")} ↗</a></span>}</td><td>{tr(o.items.map((i, k) => <div key={k}>{i.name} × {tr(i.qty)}</div>))}</td><td>{tr(rs(o.totalAmount))}</td><td><span className={'tag admin-payment-tag is-' + o.paymentStatus}>{tr(o.paymentMethod === 'upi' ? 'UPI QR' : o.paymentMethod === 'cod' ? 'COD' : 'Online')} · {tr(o.paymentStatus)}</span>{tr(refundText(o) && <small>{tr(refundText(o))}</small>)}{tr(o.paymentReference && <small>{tr("Submitted UTR: ")}{o.paymentReference}</small>)}{tr(o.paymentMethod === 'upi' && ['pending', 'failed'].includes(o.paymentStatus) && ['placed', 'confirmed', 'cancelled'].includes(o.orderStatus) && <button className="link" disabled={Boolean(busy)} onClick={() => confirmPayment(o)}>{tr("Confirm bank payment")}</button>)}{tr(o.orderStatus === 'cancelled' && o.paymentStatus === 'paid' && <button className="link" disabled={Boolean(busy)} onClick={() => confirmRefund(o)}>{tr("Record completed refund")}</button>)}{tr(o.transactionId && <><small>{tr("Payment: ")}{o.transactionId}</small></>)}</td><td><select aria-label={'Status for order ' + o._id.slice(-8)} value={o.orderStatus} disabled={busy === o._id || o.orderStatus === 'cancelled' || o.orderStatus === 'delivered'} onChange={e => {
                 if (e.target.value !== 'cancelled' || confirm(tr('Cancel this order and return its items to stock?'))) change(o._id, e.target.value);
-              }}>{tr(STATUSES.filter(s => s !== 'cancelled' || o.orderStatus === 'cancelled').map(s => <option key={s} value={s}>{tr(s)}</option>))}</select>{tr((['placed', 'confirmed'].includes(o.orderStatus) || o.orderStatus === 'cancelled' && o.cancelledAt && o.stockRestored === false) && <button className="link danger" disabled={Boolean(busy)} onClick={() => cancel(o)}>{tr(o.orderStatus === 'cancelled' ? 'Complete cancellation' : 'Cancel order')}</button>)}{tr(o.cancelledBy && <small>{tr("Cancelled by ")}{tr(o.cancelledBy)}</small>)}</td><td><InvoiceButton orderId={o._id} compact/></td></tr>))}</tbody></AdminTable> : <Empty>{tr("No orders for this status.")}</Empty>)}</State><p className="muted">{tr("Showing the latest 200 matching orders. Cancel before shipment. Delivered and cancelled orders are final. Verify QR payments in your bank account. Paid cancellations need a manual refund; record it only after sending it.")}</p></section>;
+              }}>{tr(STATUSES.filter(s => s !== 'cancelled' || o.orderStatus === 'cancelled').map(s => <option key={s} value={s}>{tr(s)}</option>))}</select>{tr((['placed', 'confirmed'].includes(o.orderStatus) || o.orderStatus === 'cancelled' && o.cancelledAt && o.stockRestored === false) && <button className="link danger" disabled={Boolean(busy)} onClick={() => cancel(o)}>{tr(o.orderStatus === 'cancelled' ? 'Complete cancellation' : 'Cancel order')}</button>)}{tr(o.cancelledBy && <small>{tr("Cancelled by ")}{tr(o.cancelledBy)}</small>)}</td><td><InvoiceButton orderId={o._id} compact/></td></tr>))}</tbody></AdminTable> : <Empty>{term ? 'No orders match your search.' : filter.startsWith('needs:') ? 'Nothing is waiting here. Well done.' : 'No orders for this status.'}</Empty>)}</State><p className="muted">{tr("Showing the latest 200 matching orders. Cancel before shipment. Delivered and cancelled orders are final. Verify QR payments in your bank account. Paid cancellations need a manual refund; record it only after sending it.")}</p></section>;
 }
 function Users() {
   const resource = useData('/admin/users', []),
@@ -352,7 +417,7 @@ function Messages() {
       setBusy('');
     }
   };
-  return <section className="admin-panel"><div className="admin-section-title"><h3>{tr("Customer messages")}</h3><span className="mini-badge">{tr(resource.data.filter(m => !m.isRead).length)}{tr(" unread")}</span></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<State resource={resource}>{tr(resource.data.length ? resource.data.map(m => <article className={'admin-message ' + (m.isRead ? 'read' : '')} key={m._id}><div className="admin-section-title"><div><b>{m.name}</b>{m.email ? <a href={'mailto:' + m.email}>{m.email}</a> : m.phone ? <span className="message-contact"><a href={'tel:' + m.phone}>{m.phone}</a> · <a href={'https://wa.me/' + m.phone.replace(/\D/g, '')} target="_blank" rel="noreferrer">WhatsApp ↗</a></span> : null}</div><span className="tag">{tr(m.isRead ? 'Read' : 'New')}</span></div><p>{m.message}</p><small>{tr(new Date(m.createdAt).toLocaleString('en-IN'))}</small><div>{tr(!m.isRead && <button disabled={busy === m._id} className="link" onClick={() => act(m._id, () => api.put(`/admin/messages/${m._id}/read`))}>{tr("Mark read")}</button>)}<button disabled={busy === m._id} className="link danger" onClick={() => {
+  return <section className="admin-panel"><div className="admin-section-title"><h3>{tr("Customer messages")}</h3><span className="mini-badge">{tr(resource.data.filter(m => !m.isRead).length)}{tr(" unread")}</span></div>{tr(error && <p className="err" role="alert">{tr(error)}</p>)}<State resource={resource}>{tr(resource.data.length ? resource.data.map(m => <article className={'admin-message ' + (m.isRead ? 'read' : '')} key={m._id}><div className="admin-section-title"><div><b>{m.name}</b>{m.email ? <a href={'mailto:' + m.email}>{m.email}</a> : m.phone ? <span className="message-contact"><a href={'tel:' + m.phone}>{m.phone}</a> · <a href={whatsappLink(m.phone)} target="_blank" rel="noreferrer">WhatsApp ↗</a></span> : null}</div><span className="tag">{tr(m.isRead ? 'Read' : 'New')}</span></div><p>{m.message}</p><small>{tr(new Date(m.createdAt).toLocaleString('en-IN'))}</small><div>{tr(!m.isRead && <button disabled={busy === m._id} className="link" onClick={() => act(m._id, () => api.put(`/admin/messages/${m._id}/read`))}>{tr("Mark read")}</button>)}<button disabled={busy === m._id} className="link danger" onClick={() => {
             if (confirm(tr('Delete this message?'))) act(m._id, () => api.delete('/admin/messages/' + m._id));
           }}>{tr("Delete")}</button></div></article>) : <Empty>{tr("Your inbox is clear. Messages from the contact form will appear here.")}</Empty>)}</State></section>;
 }
@@ -360,6 +425,7 @@ const TABS = {
   Dashboard,
   Products,
   Orders,
+  'Daily register': DailyRegister,
   'Counter bills': CounterBills,
   Bookkeeping,
   'Account book': AccountBook,
@@ -371,6 +437,7 @@ const icons = {
   Dashboard: 'sun',
   Products: 'leaf',
   Orders: 'bag',
+  'Daily register': 'receipt',
   'Counter bills': 'bag',
   Bookkeeping: 'menu',
   'Account book': 'menu',
@@ -382,6 +449,7 @@ const descriptions = {
   Dashboard: 'A clear view of your shop, from stock to sales.',
   Products: 'Your seeds, farm essentials and inventory.',
   Orders: 'Follow each order from checkout to delivery.',
+  'Daily register': 'Every day’s sales, purchases, expenses and cash in one register.',
   'Counter bills': 'Make, print and share bills for customers at your shop.',
   Bookkeeping: 'Counter sales, customer dues, receipts and shop expenses.',
   'Account book': 'Day book, account ledgers, opening balances and accounting entries.',
@@ -403,9 +471,9 @@ export default function Admin() {
     nav = useNavigate(),
     View = TABS[tab];
   useEffect(() => { if (TABS[requestedTab]) setTab(requestedTab); }, [requestedTab]);
-  const openTab = value => {
+  const openTab = (value, params = {}) => {
     setTab(value);
-    nav('/admin?tab=' + encodeURIComponent(value));
+    nav('/admin?' + new URLSearchParams({ tab: value, ...params }));
   };
   const leave = async () => {
     try {

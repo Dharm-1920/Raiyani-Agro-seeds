@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { CounterBill, Expense, JournalEntry } = require('../models');
+const { CounterBill, Expense, JournalEntry, Purchase, SupplierPayment } = require('../models');
 const { protect, adminOnly } = require('../middleware');
 const books = require('../services/bookkeeping');
 const service = require('../services/account-book');
@@ -7,11 +7,11 @@ router.use(protect, adminOnly);
 const failure = (error, res, next) => error.status ? res.status(error.status).json({ message: error.message }) : next(error);
 async function report(query) {
   const range = books.dateRange(query.from, query.to);
-  const [bills, expenses, manual] = await Promise.all([
+  const [bills, expenses, manual, purchases, supplierPayments] = await Promise.all([
     CounterBill.find().select('shipping createdAt totalAmount paidCents payments paymentStatus paymentMethod user').lean(),
-    Expense.find().lean(), JournalEntry.find().lean(),
+    Expense.find().lean(), JournalEntry.find().lean(), Purchase.find().lean(), SupplierPayment.find().lean(),
   ]);
-  const entries = service.journalEntries(bills, expenses, manual);
+  const entries = service.journalEntries(bills, expenses, manual, purchases, supplierPayments);
   const ledger = service.accountLedger(entries, query.account || 'Cash', range);
   const dayBook = entries.filter(entry => (!range.start || new Date(entry.date) >= range.start) && (!range.end || new Date(entry.date) < range.end));
   return { ledger, dayBook };

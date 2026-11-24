@@ -2,7 +2,21 @@ const crypto = require('crypto');
 const books = require('./bookkeeping');
 const { text, decimal, invalid } = require('./counter-bills');
 const manualAccounts = ['Cash', 'Bank / UPI', 'Card clearing', 'Owner capital', 'Owner drawings', 'Loan payable', 'Opening balance equity', 'Other income', ...books.categories.map(category => 'Expense: ' + category)];
-const allAccounts = [...manualAccounts, 'Customer receivables', 'Counter sales'];
+const allAccounts = [...manualAccounts, 'Customer receivables', 'Counter sales', 'Purchases', 'GST input credit', 'Supplier payables'];
+// Purchases and supplier payments as double entries. Cancelled entries are left out.
+function purchaseEntries(purchases = [], payments = []) {
+  const out = [];
+  for (const p of purchases) {
+    if (p.voidedAt) continue;
+    const reference = 'PU-' + String(p._id).toUpperCase(), customer = p.supplier?.name || '', goods = (p.subtotalCents || 0) + (p.otherChargesCents || 0);
+    const post = (suffix, description, debit, credit, amountCents, kind) => { if (amountCents > 0) out.push({ id: 'purchase' + suffix + '-' + p._id, date: p.occurredAt, reference, description, customer, debit, credit, amountCents, kind }); };
+    post('', 'Purchase' + (p.billNumber ? ' · bill ' + p.billNumber : ''), 'Purchases', 'Supplier payables', goods, 'purchase');
+    post('-gst', 'GST on purchase', 'GST input credit', 'Supplier payables', p.taxCents || 0, 'purchase');
+    post('-paid', 'Paid to supplier', 'Supplier payables', books.accounts[p.paymentMethod] || 'Cash', p.paidCents || 0, 'supplier-payment');
+  }
+  for (const s of payments) if (!s.voidedAt) out.push({ id: 'supplier-payment-' + s._id, date: s.occurredAt, reference: 'SP-' + String(s._id).toUpperCase(), description: s.note || 'Supplier payment', customer: s.supplier?.name || '', debit: 'Supplier payables', credit: books.accounts[s.method] || 'Cash', amountCents: s.amountCents, kind: 'supplier-payment' });
+  return out;
+}
 function prepareJournal(body = {}) {
   const data = { occurredAt: books.dateRange(body.date, body.date).start, description: text(body.description, 250, true), debitAccount: body.debitAccount, creditAccount: body.creditAccount,
     amountCents: Math.round(decimal(body.amount, 2, 10000000000000, 'Enter a valid entry amount.') * 100) };
@@ -10,8 +24,8 @@ function prepareJournal(body = {}) {
   if (!manualAccounts.includes(data.debitAccount) || !manualAccounts.includes(data.creditAccount) || data.debitAccount === data.creditAccount) invalid('Choose two different supported accounts. Customer sales and receipts must be recorded through bills.');
   return { ...data, requestKey: books.key(body.requestKey), requestHash: crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex') };
 }
-function journalEntries(bills, expenses, manual) {
-  return [...books.buildBooks(bills, expenses).entries, ...manual.map(entry => ({
+function journalEntries(bills, expenses, manual, purchases = [], supplierPayments = []) {
+  return [...books.buildBooks(bills, expenses).entries, ...purchaseEntries(purchases, supplierPayments), ...manual.map(entry => ({
     id: 'manual-' + entry._id, date: entry.occurredAt, reference: 'JE-' + String(entry._id).toUpperCase(), description: entry.description,
     customer: '', debit: entry.debitAccount, credit: entry.creditAccount, amountCents: entry.amountCents, kind: 'manual',
   }))].sort((a, b) => new Date(a.date) - new Date(b.date) || a.id.localeCompare(b.id));
@@ -65,4 +79,4 @@ function ledgerCsv(ledger) {
     ['', '', 'Closing balance', '', '', balance(ledger.closingCents)]];
   return '\ufeff' + lines.map(row => row.map(cell).join(',')).join('\r\n');
 }
-module.exports = { manualAccounts, allAccounts, prepareJournal, journalEntries, accountLedger, customerStatement, ledgerCsv };
+module.exports = { manualAccounts, allAccounts, purchaseEntries, prepareJournal, journalEntries, accountLedger, customerStatement, ledgerCsv };
